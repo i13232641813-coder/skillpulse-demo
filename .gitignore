@@ -1,0 +1,18 @@
+.venv/
+__pycache__/
+*.py[cod]
+backend/.env
+workspace/outbox/
+/workspace/inbox/
+/workspace/skills/
+/evidence/
+*.tar.gz
+*.zip
+.pytest_cache/
+dist/
+# 历史开发临时文件保留在本机，不进入公开提交。
+apply_patches.py
+find_pipeline.py
+node_temp_script.js
+temp_written.txt
+write1.txt

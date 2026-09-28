@@ -1,0 +1,44 @@
+{
+  "format": "skillpulse-local-sha256-allowlist-v1",
+  "description": "本地演示完整性 allowlist；用于检测与本清单不一致的文件，不是公钥数字签名或生产信任根。仅由维护者审阅后更新。",
+  "skills": {
+    "nvidia-skill-card-validator": {
+      "skill-card.md": "e35a395fcce6d5c9ca37506f7da26b16f20120c87239e93a99b68094d70e8d30",
+      "SKILL.md": "d2a9bfde52846c269681118f108bb24681788bb385527b3b9b0bd671be92789f",
+      "skill.schema.json": "262921fcd10797532ec2e077f4912a335003f16fd2460baa13359dec3ed6acf8",
+      "evals/evals.json": "d42b539222e678a483eb8c3b7fa0b35f24f1941e4b1f81810105b0982d7cd864"
+    },
+    "rag-blueprint": {
+      "BENCHMARK.md": "4963015ec0e3faa86f5cd80f94cc16984bae30a306525d3a328ca67d42668ef5",
+      "run_local.py": "52c4a337abeba1bdd4e9245f9a77b4b6f1d20f6bae4c48d632b5ddc36ff51e3d",
+      "skill-card.md": "46ecd8be22024a69c2accf10088505a4cf7f2253b7de6b5e562ad04e6f7db2df",
+      "SKILL.md": "945ae2f0fe908dc80697ff7599a38d081eb19c8d80b77ac45f7213109f6f5a26",
+      "skill.schema.json": "67292a2d318ab76eed733fae4b66a08f84a6080bd97a0d7911f56f6925ed344c",
+      "evals/evals.json": "248d8bf72c4ca6f541f1f5c4431cd049f33a68c402c4efd9ed3e3ac7f700dd29"
+    },
+    "skill-doctor": {
+      "BENCHMARK.md": "cf1a250863251a11242a381ea194374627be0f059d2b5dd73e1c1ad810e76b00",
+      "run_local.py": "0521819e771584282f21a3cedb8dcf547fececca0401f00acd2258b71ddf417f",
+      "skill-card.md": "06c7a874ad44be1db63b3348f00dcfa37d889f5a15ec70a4c68abf6ce31a2454",
+      "SKILL.md": "ed18a283ad96736d46286d4fd7482a50ae9a96ad0c00e909eaec67e3f170381f",
+      "skill.schema.json": "21b0689157c44d45dcef5d3c612ff3773b661f88e4d097d51d38b63fffc638fb",
+      "evals/evals.json": "af1fe61425c9a3ad45c7186ad2521d788e402934b93ddd6f349a877bbcbd5ef6"
+    },
+    "skill-report": {
+      "BENCHMARK.md": "1b743110db87a13776d7ca65c14e0c7dfc28f77f1d55f41642c327ab7b1f79b7",
+      "evals/evals.json": "c5547478374baf93273eeff35583c592bb7d7e01c7eb9e2146ee6c3f38454bf7",
+      "run_local.py": "06fdfc10154096d0ca59575d15678d1ce5b88bfb222bfbea487c61d392b260d5",
+      "skill-card.md": "355431c4559f862f8a445ca69d2d4b0c01f8a9bccf2be438604d534f68cc122e",
+      "SKILL.md": "ed490b7470559d35dabfce7b9629e924c290f2dc7da587cae02880c17d8d4a3a",
+      "skill.schema.json": "1e54b0de231b12ce36db2455ef0f47a581734e2b6933590b497b773154fe9c67"
+    },
+    "tao-generate-image-grounding": {
+      "BENCHMARK.md": "54d3820a44811c19b11cd071e801ab3511fcedb9e775bb502246fd2e3283adc6",
+      "run_local.py": "e6daf243e12fa5759a4283766207a97b7c164b8bf26716a5ab7f77e38796eb7d",
+      "skill-card.md": "e3dcbba70f144118add7192b9bcb011d74dbf7c21b73f14a3374dc8e3f11ca26",
+      "SKILL.md": "b29bf86eb25e9afdaad02eb576f618fe2ee0a05799bf170631f9beb5a5ff71dc",
+      "skill.schema.json": "fd42c14e110fd1c7a295ec4b179bcd17238e16c94bfd36075b80e736b2ef53de",
+      "evals/evals.json": "38ab279a9ab246442d7fe8f6208ab03ec2296111e8c0d2f5dd49fb2a9ff35e41"
+    }
+  }
+}

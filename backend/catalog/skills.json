@@ -1,0 +1,267 @@
+[
+  {
+    "trust": "LOCAL",
+    "status": "HEALTHY",
+    "scene": "vision",
+    "summary": "本地演示复刻样本；非 NVIDIA 上游原件，来源身份未核验。",
+    "use": "开放词汇目标定位",
+    "source": "local_sample",
+    "tags": [
+      "vision",
+      "grounding",
+      "object",
+      "detection",
+      "image",
+      "nvidia",
+      "tao"
+    ],
+    "name": "tao-generate-image-grounding"
+  },
+  {
+    "trust": "UNVERIFIED",
+    "status": "REFERENCE_ONLY",
+    "scene": "vision",
+    "summary": "历史参考名称；本地无 Skill 文件，来源未核验，不可下载运行。",
+    "use": "区域描述与框核验",
+    "source": "reference",
+    "tags": [
+      "vision",
+      "referring",
+      "expression",
+      "description",
+      "detection",
+      "image",
+      "nvidia",
+      "tao"
+    ],
+    "name": "tao-generate-referring-expressions"
+  },
+  {
+    "trust": "UNVERIFIED",
+    "status": "REFERENCE_ONLY",
+    "scene": "vision",
+    "summary": "历史参考名称；本地无 Skill 文件，来源未核验，不可下载运行。",
+    "use": "视频搜索与摘要",
+    "source": "reference",
+    "tags": [
+      "video",
+      "search",
+      "summarization",
+      "vss",
+      "vision",
+      "nvidia"
+    ],
+    "name": "vss-deploy-profile"
+  },
+  {
+    "trust": "UNVERIFIED",
+    "status": "REFERENCE_ONLY",
+    "scene": "vision",
+    "summary": "历史参考名称；本地无 Skill 文件，来源未核验，不可下载运行。",
+    "use": "视频片段问答",
+    "source": "reference",
+    "tags": [
+      "video",
+      "qa",
+      "search",
+      "vss",
+      "vision",
+      "nvidia"
+    ],
+    "name": "vss-ask-video"
+  },
+  {
+    "trust": "UNVERIFIED",
+    "status": "REFERENCE_ONLY",
+    "scene": "vision",
+    "summary": "历史参考名称；本地无 Skill 文件，来源未核验，不可下载运行。",
+    "use": "工业视觉 pipeline",
+    "source": "reference",
+    "tags": [
+      "deepstream",
+      "rtsp",
+      "detection",
+      "tracking",
+      "pipeline",
+      "vision",
+      "nvidia"
+    ],
+    "name": "deepstream-generate-pipeline"
+  },
+  {
+    "trust": "UNVERIFIED",
+    "status": "REFERENCE_ONLY",
+    "scene": "vision",
+    "summary": "历史参考名称；本地无 Skill 文件，来源未核验，不可下载运行。",
+    "use": "导入视觉模型",
+    "source": "reference",
+    "tags": [
+      "deepstream",
+      "model",
+      "import",
+      "vision",
+      "nvidia"
+    ],
+    "name": "deepstream-import-vision-model"
+  },
+  {
+    "trust": "LOCAL",
+    "status": "HEALTHY",
+    "scene": "rag",
+    "summary": "本地演示复刻样本；非 NVIDIA 上游原件，来源身份未核验。",
+    "use": "企业内部知识库",
+    "source": "local_sample",
+    "tags": [
+      "rag",
+      "knowledge",
+      "document",
+      "qa",
+      "nvidia"
+    ],
+    "name": "rag-blueprint"
+  },
+  {
+    "trust": "UNVERIFIED",
+    "status": "REFERENCE_ONLY",
+    "scene": "rag",
+    "summary": "历史参考名称；本地无 Skill 文件，来源未核验，不可下载运行。",
+    "use": "检索增强",
+    "source": "reference",
+    "tags": [
+      "rag",
+      "retrieval",
+      "search",
+      "nemo",
+      "nvidia"
+    ],
+    "name": "nemo-retriever"
+  },
+  {
+    "trust": "UNVERIFIED",
+    "status": "REFERENCE_ONLY",
+    "scene": "optimization",
+    "summary": "历史参考名称；本地无 Skill 文件，来源未核验，不可下载运行。",
+    "use": "路由 / 组合优化",
+    "source": "reference",
+    "tags": [
+      "optimization",
+      "routing",
+      "logistics",
+      "finance",
+      "cuopt",
+      "nvidia"
+    ],
+    "name": "cuopt-routing-api-python"
+  },
+  {
+    "trust": "UNVERIFIED",
+    "status": "REFERENCE_ONLY",
+    "scene": "optimization",
+    "summary": "历史参考名称；本地无 Skill 文件，来源未核验，不可下载运行。",
+    "use": "投资组合优化",
+    "source": "reference",
+    "tags": [
+      "optimization",
+      "portfolio",
+      "finance",
+      "quant",
+      "nvidia"
+    ],
+    "name": "portfolio-optimization"
+  },
+  {
+    "trust": "UNVERIFIED",
+    "status": "REFERENCE_ONLY",
+    "scene": "data",
+    "summary": "历史参考名称；本地无 Skill 文件，来源未核验，不可下载运行。",
+    "use": "cuDF 加速分析",
+    "source": "reference",
+    "tags": [
+      "data",
+      "analysis",
+      "cudf",
+      "gpu",
+      "nvidia"
+    ],
+    "name": "accelerated-computing-cudf"
+  },
+  {
+    "trust": "HIGH",
+    "status": "HEALTHY",
+    "scene": "diagnostics",
+    "summary": "自研 Skill，适合环境与配置排障。",
+    "use": "Skill 健康诊断",
+    "source": "local_project",
+    "tags": [
+      "diagnostics",
+      "skill",
+      "health",
+      "doctor",
+      "trust",
+      "local"
+    ],
+    "name": "skill-doctor"
+  },
+  {
+    "trust": "MEDIUM",
+    "status": "UNHEALTHY",
+    "scene": "vision",
+    "summary": "自研组合 Skill，缺少部分治理产物。",
+    "use": "行人检测组合 Skill",
+    "source": "local_project",
+    "tags": [
+      "vision",
+      "pedestrian",
+      "detection",
+      "custom",
+      "local"
+    ],
+    "name": "local-pedestrian-detector"
+  },
+  {
+    "trust": "LOW",
+    "status": "UNHEALTHY",
+    "scene": "diagnostics",
+    "summary": "用于演示 SkillPulse 安检能力。",
+    "use": "损坏 Skill 样本",
+    "source": "local_project",
+    "tags": [
+      "broken",
+      "sample",
+      "diagnostics",
+      "local"
+    ],
+    "name": "sample-skill-broken"
+  },
+  {
+    "trust": "LOCAL",
+    "status": "HEALTHY",
+    "scene": "diagnostics",
+    "summary": "将真实五项本地检查结果转换为可读报告；不提供第三方合规认证。",
+    "use": "检查证据报告",
+    "source": "local_project",
+    "tags": [
+      "report",
+      "audit",
+      "diagnostics",
+      "skill",
+      "local"
+    ],
+    "name": "skill-report"
+  },
+  {
+    "trust": "CURATED_ACTION",
+    "status": "CONDITIONAL",
+    "scene": "governance",
+    "summary": "NVIDIA/skills 固定提交的单一 Skill Card 标记校验脚本；由 SkillPulse 提供 DGX 受控运行适配。不是完整上游 Skill、签名认证或合规证明。",
+    "use": "Skill Card 待人工审核标记检查",
+    "source": "external_curated_action",
+    "repository": "NVIDIA/skills",
+    "commit": "d8519c57da6db5d9bea274ec1724a4a7a56a3dee",
+    "path": "skills/skill-card-generator/scripts/validate_submission.py",
+    "source_url": "https://github.com/NVIDIA/skills/blob/d8519c57da6db5d9bea274ec1724a4a7a56a3dee/skills/skill-card-generator/scripts/validate_submission.py",
+    "license": "Apache-2.0 (upstream script SPDX)",
+    "tags": ["card", "validator", "review", "governance", "skill", "nvidia", "external"],
+    "name": "nvidia-skill-card-validator"
+  }
+]

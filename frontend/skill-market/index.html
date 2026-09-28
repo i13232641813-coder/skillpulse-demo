@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SkillPulse — Skill Market</title>
+<style>
+:root{--bg:#070b14;--panel:#0f172a;--muted:#94a3b8;--line:#1f2937;--accent:#22c55e;--danger:#ef4444;--warn:#f59e0b}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(1200px 800px at 10% -10%,rgba(34,197,94,.10),transparent),radial-gradient(900px 600px at 90% 10%,rgba(59,130,246,.08),transparent),var(--bg);color:#e5e7eb;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+header{display:flex;align-items:center;justify-content:space-between;padding:16px 22px;border-bottom:1px solid var(--line);backdrop-filter:blur(10px);background:rgba(15,23,42,.55)}
+.brand{font-weight:800;letter-spacing:.2px}
+.brand span{color:#86efac}
+.topbar{display:flex;gap:10px;align-items:center}
+.pill{padding:6px 10px;border-radius:9999px;font-size:12px;border:1px solid var(--line);background:#0b1220;color:#cbd5e1}
+.layout{display:grid;grid-template-columns:380px 1fr;grid-template-rows:auto 1fr;gap:14px;padding:16px;min-height:calc(100vh - 60px)}
+.panel{background:linear-gradient(180deg,rgba(17,24,39,.85),rgba(17,24,39,.55));border:1px solid var(--line);border-radius:18px;padding:14px;backdrop-filter:blur(8px)}
+.title{font-size:12px;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.18em}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.field label{font-size:12px;color:#cbd5e1}
+.field input,.field textarea,.field select{background:#020617;border:1px solid #1f2937;border-radius:10px;padding:8px 10px;color:#e5e7eb;font-size:13px;outline:none}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:#22c55e}
+.btn{background:#0f172a;color:#e5e7eb;border:1px solid #334155;padding:8px 12px;border-radius:10px;cursor:pointer;font-size:13px;width:100%}
+.btn:hover{border-color:#475569}.btn.primary{background:#14532d;border-color:#166534;color:#bbf7d0}
+.card{background:#0b1220;border:1px solid #1f2937;border-radius:14px;padding:12px;margin-bottom:10px}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.badge{display:inline-block;padding:3px 8px;border-radius:8px;font-size:12px;margin-right:6px}
+.badge.pass{background:#052e16;color:#86efac;border:1px solid #14532d}.badge.fail{background:#450a0a;color:#fca5a5;border:1px solid #7f1d1d}.badge.warn{background:#422006;color:#fde68a;border:1px solid #7c2d12}
+.small{font-size:11px;color:#94a3b8}
+.log{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:12px;line-height:1.55;color:#cbd5e1;background:#020617;border:1px solid #111827;border-radius:12px;padding:10px;max-height:52vh;overflow:auto}
+.log .ok{color:#86efac}.log .bad{color:#fca5a5}.log .warn{color:#fde68a}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.chip{display:inline-flex;align-items:center;gap:6px;background:#0b1220;border:1px solid #1f2937;padding:8px 10px;border-radius:12px;font-size:12px;cursor:grab}
+.footer{padding:12px 18px;color:var(--muted);font-size:12px;border-top:1px solid var(--line)}
+.skeleton{height:12px;background:#111827;border-radius:9999px;margin:6px 0}
+.spin{width:14px;height:14px;border:2px solid #334155;border-top-color:#86efac;border-radius:50%;display:inline-block;animation:spin 1s linear infinite;margin-left:8px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">SkillPulse <span>Skill Market</span></div>
+  <div class="topbar">
+    <div class="pill">全流程：需求 → 搜索 → Pulse 安检 → 下载 → 拼搭</div>
+  </div>
+</header>
+<div class="layout">
+  <aside class="panel">
+    <div class="title">1. 你的 Skill 需求</div>
+    <div class="field">
+      <label>场景</label>
+      <select id="scene">
+        <option value="vision">视觉 / 视频</option>
+        <option value="rag">知识库 / RAG</option>
+        <option value="optimization">优化 / 调度</option>
+        <option value="diagnostics">诊断 / 排障</option>
+        <option value="multimodal">多模态 Agent</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>任务描述</label>
+      <textarea id="task" rows="4">我需要一个能检查 Skill 健康状态、验证签名、生成合规报告的本地 Skill。</textarea>
+    </div>
+    <div class="field">
+      <label>运行环境</label>
+      <input id="env" value="DGX Spark + OpenClaw + Qwen3.6" />
+    </div>
+    <div class="field">
+      <label>偏好来源</label>
+      <select id="source">
+        <option value="nvidia">NVIDIA 官方优先</option>
+        <option value="community">社区优先</option>
+        <option value="auto">自动匹配</option>
+      </select>
+    </div>
+    <button class="btn primary" onclick="searchSkills()">🔍 全网搜索符合要求的 Skill</button>
+    <div class="title" style="margin-top:14px">2. 安检结果</div>
+    <div id="pulse-box">填写需求后点击搜索，系统会模拟 LLM 检索 + SkillPulse 五道工序安检。</div>
+    <div class="title" style="margin-top:14px">3. 已下载到本地</div>
+    <div id="local-box" class="toolbar">暂无已下载 Skill</div>
+  </aside>
+  <main>
+    <div class="panel">
+      <div class="title">搜索结果</div>
+      <div id="results" class="grid">点击“全网搜索”查看候选 Skill。</div>
+    </div>
+    <div class="panel" style="margin-top:14px">
+      <div class="title">Lego 拼搭工具栏</div>
+      <div class="small">拖拽下方 Skill 到画布，或先点击“添加到画布”。</div>
+      <div id="toolbar" class="toolbar">先下载 Skill，这里才会出现积木。</div>
+      <div class="title" style="margin-top:14px">当前画布</div>
+      <div id="canvas" style="border:1px dashed #334155;border-radius:14px;background:#0b1220;min-height:180px;position:relative;overflow:hidden"></div>
+      <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn primary" style="width:auto" onclick="runLego()">运行链路</button>
+        <button class="btn" style="width:auto" onclick="clearCanvas()">清空画布</button>
+      </div>
+      <div id="run-box" class="log" style="margin-top:10px">等待运行...</div>
+    </div>
+  </main>
+</div>
+<div class="footer">SkillPulse Demo — 更用户友好的方向：需求 → 搜索 → 安检 → 下载 → 拼搭。</div>
+<script>
+const MARKET = [
+  {name:'tao-generate-image-grounding', scene:'vision', source:'nvidia', trust:'HIGH', status:'HEALTHY', use:'开放词汇目标定位', summary:'官方视觉 Skill，适合图片定位。'},
+  {name:'tao-generate-referring-expressions', scene:'vision', source:'nvidia', trust:'HIGH', status:'HEALTHY', use:'区域描述与框核验', summary:'官方视觉 Skill，适合描述检测框。'},
+  {name:'vss-deploy-profile', scene:'vision', source:'nvidia', trust:'HIGH', status:'HEALTHY', use:'视频搜索与摘要', summary:'官方 VSS Skill，适合安防/园区/零售视频。'},
+  {name:'deepstream-generate-pipeline', scene:'vision', source:'nvidia', trust:'HIGH', status:'HEALTHY', use:'工业视觉 pipeline', summary:'官方 DeepStream Skill，适合 RTSP + 检测跟踪。'},
+  {name:'rag-blueprint', scene:'rag', source:'nvidia', trust:'HIGH', status:'HEALTHY', use:'企业内部知识库', summary:'官方 RAG Skill，适合内部文档问答。'},
+  {name:'cuopt-routing-api-python', scene:'optimization', source:'nvidia', trust:'HIGH', status:'HEALTHY', use:'路由 / 组合优化', summary:'官方 cuOpt Skill，适合物流与金融。'},
+  {name:'portfolio-optimization', scene:'optimization', source:'nvidia', trust:'HIGH', status:'HEALTHY', use:'投资组合优化', summary:'官方组合优化 Skill，适合量化金融。'},
+  {name:'nemo-retriever', scene:'rag', source:'nvidia', trust:'HIGH', status:'HEALTHY', use:'检索增强', summary:'官方检索 Skill，适合 RAG 管线。'},
+  {name:'skill-doctor', scene:'diagnostics', source:'community', trust:'HIGH', status:'HEALTHY', use:'Skill 健康诊断', summary:'自研 Skill，适合环境与配置排障。'},
+  {name:'local-pedestrian-detector', scene:'vision', source:'community', trust:'MEDIUM', status:'UNHEALTHY', use:'行人检测组合 Skill', summary:'自研组合 Skill，缺少部分治理产物。'}
+];
+let downloaded = new Set(['skill-doctor']);
+let canvasSkills = [];
+function $(sel){return document.querySelector(sel)}
+function trustColor(trust){return trust==='HIGH'?'#22c55e':trust==='MEDIUM'?'#f59e0b':'#ef4444'}
+function renderPulse(item){
+  const el = $('#pulse-box');
+  const checks = item.checks || [];
+  const badges = checks.map(c=>`<span class="badge ${c.status==='PASS'?'pass':'fail'}">${c.name}: ${c.status}</span>`).join(' ');
+  el.innerHTML = `<div class="card"><div class="card-head"><strong>${item.name}</strong><span class="badge ${item.status==='HEALTHY'?'pass':'warn'}">${item.status}</span></div><div class="small">${item.summary||''}</div><div style="margin-top:8px">${badges}</div><div class="small" style="margin-top:6px">可信：${item.trust} | ${item.verdict||''}</div></div>` + el.innerHTML;
+}
+function renderResults(items){
+  const el = $('#results');
+  el.innerHTML = items.map(item=>`<div class="card">
+    <div class="card-head"><strong>${item.name}</strong><span class="badge ${item.status==='HEALTHY'?'pass':'warn'}">${item.trust}</span></div>
+    <div class="small">${item.summary||item.use||''}</div>
+    <div class="small">场景：${item.scene} | 来源：${item.source}</div>
+    <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn primary" style="width:auto" onclick="downloadSkill('${item.name}')">下载 Skill</button>
+      <button class="btn" style="width:auto" onclick="inspectSkill('${item.name}')">SkillPulse 安检</button>
+    </div>
+  </div>`).join('');
+}
+function renderToolbar(){
+  const el = $('#toolbar');
+  const items = MARKET.filter(m=>downloaded.has(m.name));
+  el.innerHTML = items.map(item=>`<div class="chip" draggable="true" data-name="${item.name}"><span class="dot" style="display:inline-block;width:8px;height:8px;border-radius:9999px;background:${trustColor(item.trust)}"></span>${item.name}</div>`).join('');
+  el.querySelectorAll('.chip').forEach(chip=>{
+    chip.addEventListener('dragstart', e=>{ e.dataTransfer.setData('text/plain', chip.dataset.name); });
+    chip.addEventListener('click', ()=> addToCanvas(chip.dataset.name));
+  });
+  const canvas = $('#canvas');
+  canvas.ondragover = e=> e.preventDefault();
+  canvas.ondrop = e=>{ e.preventDefault(); const name = e.dataTransfer.getData('text/plain'); if(name) addToCanvas(name); };
+}
+function addToCanvas(name){
+  if(canvasSkills.includes(name)){ alert('画布中已存在：'+name); return; }
+  canvasSkills.push(name);
+  renderCanvas();
+}
+function removeFromCanvas(name){
+  canvasSkills = canvasSkills.filter(x=>x!==name);
+  renderCanvas();
+}
+function renderCanvas(){
+  const el = $('#canvas');
+  el.innerHTML = canvasSkills.map((name,idx)=>`<div class="chip" style="position:inline-flex;margin:8px" data-name="${name}"><span class="dot" style="display:inline-block;width:8px;height:8px;border-radius:9999%;background:${trustColor('HIGH')}"></span>${name}<button class="btn" style="width:auto;padding:4px 8px;margin-left:6px" onclick="removeFromCanvas('${name}')">移除</button></div>`).join('');
+}
+function clearCanvas(){ canvasSkills=[]; renderCanvas(); $('#run-box').textContent='等待运行...'; }
+async function searchSkills(){
+  const scene = $('#scene').value;
+  const task = $('#task').value.trim();
+  const env = $('#env').value.trim();
+  const source = $('#source').value;
+  const resultsBox = $('#results');
+  resultsBox.innerHTML = '<div class="card"><div class="small"><span class="spin"></span> 正在用大模型理解需求，并全网检索候选 Skill...</div></div>' + resultsBox.innerHTML;
+  await sleep(900);
+  let items = MARKET.filter(x=>x.scene===scene);
+  if(source==='nvidia') items = items.filter(x=>x.source==='nvidia');
+  if(source==='community') items = items.filter(x=>x.source==='community');
+  if(!items.length) items = MARKET.slice(0,6);
+  renderResults(items);
+  $('#pulse-box').innerHTML = '<div class="small">点击单个 Skill 的“SkillPulse 安检”查看五道工序结果。</div>';
+}
+function inspectSkill(name){
+  const item = MARKET.find(x=>x.name===name);
+  if(!item) return;
+  const checks = [
+    {name:'Catalog', status:'PASS', detail:'frontmatter 与来源登记完整'},
+    {name:'Scanned', status: item.status==='HEALTHY'?'PASS':'FAIL', detail:'mock spector scan'},
+    {name:'Evaluated', status: item.status==='HEALTHY'?'PASS':'FAIL', detail:'BENCHMARK 与 evals'},
+    {name:'Signed', status: item.status==='HEALTHY'?'PASS':'FAIL', detail:'OMS signature check'},
+    {name:'Documented', status: item.status==='HEALTHY'?'PASS':'FAIL', detail:'skill-card present'}
+  ];
+  const allPass = checks.every(c=>c.status==='PASS');
+  renderPulse({...item, checks, status: allPass?'HEALTHY':'UNHEALTHY', trust: allPass?'HIGH':'LOW', verdict: allPass?'Safe to enter workflow':'Block release until repaired'});
+}
+function downloadSkill(name){
+  downloaded.add(name);
+  renderToolbar();
+  const el = $('#local-box');
+  el.innerHTML = Array.from(downloaded).map(x=>`<div class="chip"><span class="dot" style="display:inline-block;width:8px;height:8px;border-radius:9999px;background:#22c55e"></span>${x}</div>`).join('');
+}
+function runLego(){
+  if(canvasSkills.length<2){ alert('请至少添加 2 个 Skill'); return; }
+  const box = $('#run-box');
+  box.innerHTML = '<div><span class="spin"></span> 正在执行 SkillPulse 五道工序...</div>';
+  setTimeout(()=>{
+    const lines = canvasSkills.map((name,idx)=>`[${idx+1}] ${name}：已通过 SkillPulse 安检，进入可执行状态。`);
+    box.innerHTML = lines.join('\n') + '\n✔ 链路已完成治理检查，可进入工作流。';
+  }, 900);
+}
+function sleep(ms){return new Promise(res=>setTimeout(res,ms))}
+(function init(){ renderToolbar(); })();
+</script>
+</body>
+</html>

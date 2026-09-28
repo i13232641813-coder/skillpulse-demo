@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SkillPulse Demo</title>
+<style>
+:root{--bg:#0b0f17;--panel:#111827;--muted:#94a3b8;--accent:#22c55e;--danger:#ef4444;--warn:#f59e0b;--line:#1f2937}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:#e5e7eb;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+header{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(17,24,39,.8),rgba(17,24,39,.4))}
+.brand{font-weight:800;letter-spacing:.2px}
+.brand span{color:#86efac}
+.layout{display:grid;grid-template-columns:320px 1fr;gap:16px;padding:18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px}
+.title{font-size:14px;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.15em}
+.skill-item{display:flex;align-items:center;justify-content:space-between;padding:10px 10px;border:1px solid var(--line);border-radius:12px;margin-bottom:10px;background:#0b0f17;cursor:pointer}
+.skill-item:hover{border-color:#334155}
+.dot{width:10px;height:10px;border-radius:9999px;display:inline-block;margin-right:8px}
+.dot.ok{background:var(--accent)}.dot.bad{background:var(--danger)}.dot.warn{background:var(--warn)}
+.pill{padding:4px 10px;border-radius:9999px;font-size:12px;border:1px solid var(--line)}
+.pill.ok{color:#86efac;border-color:#14532d;background:#052e16}.pill.bad{color:#fca5a5;border-color:#7f1d1d;background:#450a0a}
+.section{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.btn{background:#0f172a;color:#e5e7eb;border:1px solid #334155;padding:8px 12px;border-radius:10px;cursor:pointer;font-size:13px}
+.btn:hover{border-color:#475569}.btn.primary{background:#14532d;border-color:#166534;color:#bbf7d0}
+pre{background:#0b0f17;border:1px solid var(--line);border-radius:12px;padding:12px;overflow:auto;max-height:45vh;font-size:13px;line-height:1.5}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line)}th{color:var(--muted);font-weight:600}
+.badge{display:inline-block;padding:3px 8px;border-radius:8px;font-size:12px;margin-right:6px}
+.badge.pass{background:#052e16;color:#86efac;border:1px solid #14532d}.badge.fail{background:#450a0a;color:#fca5a5;border:1px solid #7f1d1d}
+.footer{padding:14px 24px;color:var(--muted);font-size:12px;border-top:1px solid var(--line)}
+.spin{width:14px;height:14px;border:2px solid #334155;border-top-color:#86efac;border-radius:50%;display:inline-block;animation:spin 1s linear infinite;margin-left:8px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">SkillPulse <span>Demo</span></div>
+  <div class="pill ok">Agent Capability Trust Platform</div>
+</header>
+<div class="layout">
+  <aside class="card">
+    <div class="title">Skill Catalog</div>
+    <div id="skill-list">加载中...</div>
+    <div style="margin-top:14px">
+      <div class="title">Environment</div>
+      <button class="btn primary" onclick="loadEnv()">刷新环境状态</button>
+      <pre id="env-box" style="margin-top:10px;display:none"></pre>
+    </div>
+  </aside>
+  <main>
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div>
+          <div class="title">Health Report</div>
+          <div id="report-meta">选择一个 Skill 查看健康报告</div>
+        </div>
+        <div class="section" id="actions" style="display:none">
+          <button class="btn primary" onclick="runHealth()">执行健康检查</button>
+          <button class="btn" disabled title="自动补全会伪造可信状态；请人工修复后复检">自动修复（暂不可用）</button>
+          <button class="btn" onclick="downloadReport()">下载报告</button>
+        </div>
+      </div>
+      <pre id="report-box">暂无报告</pre>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <div class="title">Audit Log</div>
+      <table>
+        <thead><tr><th>Time</th><th>Action</th><th>Target</th><th>Result</th></tr></thead>
+        <tbody id="audit-body"><tr><td colspan="4" style="color:var(--muted)">暂无审计记录</td></tr></tbody>
+      </table>
+    </div>
+  </main>
+</div>
+<div class="footer">SkillPulse Demo — 本地原型，无需外部数据，开箱即用。</div>
+<script>
+const API_BASE = '/api';
+let current = null;
+let audit = [];
+async function api(path, opts = {}) {
+  const res = await fetch(API_BASE + path, opts);
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return res.json();
+}
+function trustColor(trust){return trust === 'HIGH' ? 'ok' : 'bad';}
+function statusColor(status){return status === 'HEALTHY' ? 'ok' : (status === 'UNHEALTHY' ? 'bad' : 'warn');}
+function renderSkills(skills){
+  const el = document.getElementById('skill-list');
+  el.innerHTML = '';
+  skills.forEach(s => {
+    const color = statusColor(s.status);
+    const row = document.createElement('div');
+    row.className = 'skill-item';
+    row.innerHTML = `<div><span class="dot ${color}"></span><strong>${s.name}</strong></div><span class="pill ${color}">${s.status}</span>`;
+    row.onclick = () => selectSkill(s.name);
+    el.appendChild(row);
+  });
+}
+async function loadSkills(){
+  const skills = await api('/skills');
+  renderSkills(skills);
+}
+async function selectSkill(name){
+  current = name;
+  document.getElementById('actions').style.display = 'flex';
+  document.getElementById('report-meta').innerText = 'Skill: ' + name + ' — 点击执行健康检查';
+  document.getElementById('report-box').innerText = '点击“执行健康检查”查看报告';
+}
+async function runHealth(){
+  if (!current) return alert('请先选择一个 Skill');
+  const box = document.getElementById('report-box');
+  box.innerHTML = '<span class="spin"></span> 正在执行 SkillPulse 五道工序检查...';
+  const data = await api('/skills/' + encodeURIComponent(current) + '/health');
+  const checks = data.checks.map(c => `<span class="badge ${c.status === 'PASS' ? 'pass' : 'fail'}">${c.name}: ${c.status}</span>`).join(' ');
+  const detail = data.checks.map(c => `- ${c.name}: ${c.status} — ${c.detail}`).join('\n');
+  box.textContent = `状态: ${data.status}
+可信度: ${data.trust}
+结论: ${data.verdict}
+
+${detail}
+
+修复建议:
+` + data.repair.map(x => '- ' + x).join('\n');
+  addAudit('health', current, data.status, '五道工序检查完成');
+  document.getElementById('report-meta').innerText = 'Skill: ' + current + ' — ' + data.status + ' — ' + data.trust + ' trust';
+}
+async function downloadReport(){
+  if (!current) return alert('请先选择一个 Skill');
+  const a = document.createElement('a');
+  a.href = API_BASE + '/demo/download-report/' + encodeURIComponent(current);
+  a.download = current + '-report.json';
+  a.click();
+  addAudit('download', current, 'OK', '报告已下载');
+}
+async function loadEnv(){
+  const env = await api('/environment/status');
+  const box = document.getElementById('env-box');
+  box.style.display = 'block';
+  const lines = env.checks.map(c => `:${c.port} ${c.service} ${c.listening ? 'LISTENING' : 'DOWN'}`).join('\n');
+  box.textContent = env.time + '\n' + lines;
+  addAudit('env', 'all', 'refreshed', '环境状态已刷新');
+}
+function addAudit(action, target, result, detail){
+  const now = new Date().toLocaleString('zh-CN');
+  audit.unshift({time: now, action, target, result, detail});
+  if (audit.length > 20) audit.pop();
+  const body = document.getElementById('audit-body');
+  body.innerHTML = audit.map(a => `<tr><td>${a.time}</td><td>${a.action}</td><td>${a.target}</td><td>${a.result} ${a.detail ? '— ' + a.detail : ''}</td></tr>`).join('');
+}
+(async function init(){ await loadSkills(); })();
+</script>
+</body>
+</html>

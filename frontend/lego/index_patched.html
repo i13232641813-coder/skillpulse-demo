@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SkillPulse — Skill Lego</title>
+<style>
+:root{
+  --bg:#eef1f5; --panel:#ffffff; --line:#e5e7eb; --text:#1f2937; --muted:#6b7280;
+  --accent:#2563eb; --accent-2:#60a5fa; --success:#16a34a; --danger:#dc2626; --warn:#d97706;
+  --stud:#f3f4f6; --stud-border:#d1d5db;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;overflow:hidden}
+header{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;border-bottom:1px solid var(--line);background:#ffffff;position:relative;z-index:5;box-shadow:0 6px 20px rgba(0,0,0,.06)}
+.brand{font-weight:900;letter-spacing:.3px;font-size:17px}
+.brand span{color:var(--accent)}
+.topbar{display:flex;gap:10px;align-items:center}
+.pill{padding:6px 10px;border-radius:9999px;font-size:12px;border:1px solid var(--line);background:#f9fafb;color:#374151}
+.layout{display:grid;grid-template-columns:340px 1fr 320px;gap:12px;padding:12px;height:calc(100% - 56px)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:12px;backdrop-filter:blur(6px);display:flex;flex-direction:column;gap:10px;overflow:auto;box-shadow:0 10px 25px rgba(0,0,0,.04)}
+.title{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.18em;display:flex;align-items:center;gap:8px}
+.plate{background:#d6dadd;border-radius:18px;position:relative;overflow:hidden;min-height:0;box-shadow:inset 0 0 0 8px #c7ccd1, inset 0 0 0 12px #d6dadd}
+.plate-grid{position:absolute;inset:0;background-image:radial-gradient(circle at center, #c7ccd1 6px, transparent 7px);background-size:22px 22px;pointer-events:none}
+.brick{position:absolute;width:220px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:18px;box-shadow:0 8px 18px rgba(0,0,0,.08);cursor:grab;user-select:none;transition:transform .15s,box-shadow .2s}
+.brick:hover{transform:translateY(-2px);box-shadow:0 14px 28px rgba(0,0,0,.10)}
+.brick.dragging{transform:scale(1.04) rotate(-1deg);box-shadow:0 22px 40px rgba(0,0,0,.14);z-index:50}
+.brick-header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #f3f4f6}
+.brick-title{font-weight:800;font-size:13px;display:flex;align-items:center;gap:10px}
+.brick-icon{width:26px;height:26px;border-radius:10px;display:grid;place-items:center;font-size:13px;background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd}
+.brick-body{padding:10px 12px;font-size:12px;color:#374151;line-height:1.5}
+.stud{position:absolute;width:14px;height:14px;border-radius:9999px;background:var(--stud);border:1px solid var(--stud-border);box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 2px 0 rgba(0,0,0,.06)}
+.stud.in{left:-8px}.stud.out{right:-8px}
+.stud.top{top:-9px;left:50%;transform:translateX(-50%)}
+.connector{position:absolute;top:38px;width:18px;height:18px;border-radius:9999px;background:#ffffff;border:2px solid #d1d5db;box-shadow:0 0 0 3px #ffffff, 0 0 0 5px #e5e7eb;transition:transform .2s}
+.connector:hover{transform:scale(1.25)}
+.connector.in{left:-11px}.connector.out{right:-11px}
+.connector.connected{background:var(--success);border-color:#bbf7d0;box-shadow:0 0 0 3px #ffffff, 0 0 0 5px #86efac}
+.edge{stroke:#cbd5e1;stroke-width:3;fill:none}
+.edge.active{stroke:url(--edgeGradient);stroke-width:4;filter:drop-shadow(0 0 8px rgba(37,99,235,.25))}
+.edge-flow{stroke:var(--accent);stroke-width:2;stroke-dasharray:5 5;fill:none;animation:flow 1s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-10}}
+.chip{display:inline-flex;align-items:center;gap:8px;background:#f9fafb;border:1px solid #e5e7eb;padding:8px 10px;border-radius:14px;margin:0 6px 8px 0;cursor:grab;font-size:12px;transition:transform .15s,border-color .2s,box-shadow .2s}
+.chip:hover{border-color:#c7ccd1;transform:translateY(-1px);box-shadow:0 8px 18px rgba(0,0,0,.06)}
+.chip .dot{width:10px;height:10px;border-radius:9999px}
+.log{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:12px;line-height:1.55;color:#374151;background:#f9fafb;border:1px solid var(--line);border-radius:12px;padding:10px;max-height:52vh;overflow:auto}
+.log .ok{color:#15803d}.log .bad{color:#b91c1c}.log .warn{color:#b45309}
+.btn{background:#ffffff;color:#111827;border:1px solid #d1d5db;padding:8px 12px;border-radius:12px;cursor:pointer;font-size:13px;width:100%;transition:transform .08s,border-color .2s,box-shadow .2s}
+.btn:hover{border-color:#9ca3af;box-shadow:0 6px 14px rgba(0,0,0,.06)}.btn:active{transform:translateY(1px)}.btn.primary{background:var(--accent);border-color:#1d4ed8;color:#ffffff;box-shadow:0 8px 18px rgba(37,99,235,.18)}
+.btn.ghost{background:#f9fafb;border:1px dashed #d1d5db;color:#374151}
+.runner{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.step{display:flex;gap:10px;align-items:flex-start;background:#f9fafb;border:1px solid var(--line);border-radius:14px;padding:10px;font-size:12px;animation:fadeIn .4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.step .marker{width:18px;height:18px;border-radius:9999px;border:1px solid #d1d5db;display:grid;place-items:center;font-weight:800;font-size:11px;margin-top:1px;background:#ffffff}
+.step.ok .marker{color:#15803d;border-color:#bbf7d0;background:#f0fdf4}.step.bad .marker{color:#b91c1c;border-color:#fecaca;background:#fef2f2}.step.warn .marker{color:#b45309;border-color:#fde68a;background:#fffbeb}
+.footer{padding:10px 18px;color:var(--muted);font-size:12px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;background:#ffffff}
+.small{font-size:11px;color:var(--muted)}
+hr{border:none;border-top:1px solid var(--line);margin:4px 0}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.field label{font-size:12px;color:#374151;font-weight:600}
+.field input,.field textarea,.field select{background:#ffffff;border:1px solid #d1d5db;border-radius:12px;padding:8px 10px;color:#111827;font-size:13px;outline:none;transition:border-color .2s,box-shadow .2s}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.10)}
+.card{background:#ffffff;border:1px solid var(--line);border-radius:16px;padding:12px;margin-bottom:10px;box-shadow:0 6px 14px rgba(0,0,0,.03)}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.badge{display:inline-block;padding:3px 8px;border-radius:9999px;font-size:12px;margin-right:6px;background:#f3f4f6;border:1px solid #e5e7eb;color:#374151}
+.badge.pass{background:#f0fdf4;color:#15803d;border-color:#bbf7d0}.badge.fail{background:#fef2f2;color:#b91c1c;border-color:#fecaca}.badge.warn{background:#fffbeb;color:#b45309;border-color:#fde68a}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.spin{width:14px;height:14px;border:2px solid #e5e7eb;border-top-color:var(--accent);border-radius:50%;display:inline-block;animation:spin 1s linear infinite;margin-left:8px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tab{display:flex;gap:8px;margin-bottom:10px}
+.tab button{flex:1}
+.tab .active{background:var(--accent);border-color:#1d4ed8;color:#ffffff}
+.shelf{background:#ffffff;border:1px dashed #d1d5db;border-radius:14px;padding:10px;min-height:44px}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">SkillPulse <span>Skill Lego</span></div>
+  <div class="topbar">
+    <div class="pill">需求 → 搜索 → 安检 → 下载 → 拼搭</div>
+    <button class="btn ghost" style="width:auto" onclick="resetCanvas()">清空底板</button>
+    <button class="btn primary" style="width:auto" onclick="runPipeline()">运行拼搭</button>
+  </div>
+</header>
+<div class="layout">
+  <aside class="panel">
+    <div class="tab">
+      <button class="btn active" id="tab-market" onclick="switchTab('market')">Skill 积木库</button>
+      <button class="btn" id="tab-local" onclick="switchTab('local')">我的积木箱</button>
+    </div>
+    <div id="panel-market">
+      <div class="title">1. 你的需求</div>
+      <div class="field">
+        <label>场景</label>
+        <select id="scene">
+          <option value="vision">视觉 / 视频</option>
+          <option value="rag">知识库 / RAG</option>
+          <option value="optimization">优化 / 调度</option>
+          <option value="diagnostics">诊断 / 排障</option>
+          <option value="multimodal">多模态 Agent</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>任务描述</label>
+        <textarea id="task" rows="3">我需要一个能检查 Skill 健康状态、验证签名、生成合规报告的本地 Skill。</textarea>
+      </div>
+      <div class="field">
+        <label>运行环境</label>
+        <input id="env" value="DGX Spark + OpenClaw + Qwen3.6" />
+      </div>
+      <div class="field">
+        <label>偏好来源</label>
+        <select id="source">
+          <option value="nvidia">NVIDIA 官方优先</option>
+          <option value="community">社区优先</option>
+          <option value="auto">自动匹配</option>
+        </select>
+      </div>
+      <button class="btn primary" onclick="searchSkills()">🔍 大模型全网搜索符合要求的 Skill</button>
+      <div class="title" style="margin-top:14px">2. SkillPulse 安检</div>
+      <div id="pulse-box">点击候选 Skill 的“安检”查看五道工序。</div>
+      <div class="title" style="margin-top:14px">3. 搜索结果</div><div id="search-status" class="small" style="margin-bottom:8px;color:#b91c1c">等待搜索...</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+        <button class="btn primary" style="width:auto" onclick="batchInspect()">批量 SkillPulse 安检</button>
+        <button class="btn" style="width:auto" onclick="downloadAllPassed()">下载全部通过项</button>
+      </div>
+      <div id="results" class="grid">请先搜索，再批量安检。</div>
+    </div>
+    <div id="panel-local" style="display:none">
+      <div class="title">已下载到本地的积木</div>
+      <div id="local-box" class="shelf">暂无已下载 Skill。</div>
+    </div>
+  </aside>
+  <main class="plate" id="canvas">
+    <div class="plate-grid"></div>
+    <svg id="edges" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1"></svg>
+    <div id="nodes" style="position:absolute;inset:0;z-index:2"></div>
+  </main>
+  <aside class="panel">
+    <div>
+      <div class="title">Lego 工具箱</div>
+      <div class="small">点击或拖拽积木到画布；至少 2 个积木才能运行拼搭。</div>
+      <div id="toolbar" class="toolbar">先下载 Skill，这里才会出现积木。</div>
+    </div>
+    <hr />
+    <div>
+      <div class="title">拼搭操作</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn primary" style="width:auto" onclick="runPipeline()">运行拼搭</button>
+        <button class="btn ghost" style="width:auto" onclick="resetCanvas()">清空底板</button>
+      </div>
+    </div>
+    <hr />
+    <div style="flex:1;display:flex;flex-direction:column;min-height:0">
+      <div class="title">拼搭输出</div>
+      <div class="runner" id="runner">添加 Skill 后点击“运行拼搭”。</div>
+    </div>
+    <hr />
+    <div style="flex:1;display:flex;flex-direction:column;min-height:0">
+      <div class="title">审计日志</div>
+      <div class="log" id="log">暂无记录</div>
+    </div>
+  </aside>
+</div>
+<div class="footer">
+  <div>SkillPulse — 更用户友好的方向：需求 → 搜索 → 安检 → 下载 → 拼搭。</div>
+  <div class="small">积木式体验 · 本地原型 · 无需登录</div>
+</div>
+<script>
+const API_BASE = '/api';
+const MARKET = [
+  {name:'tao-generate-image-grounding', scene:'vision', source:'nvidia', trust:'HIGH', status:'HEALTHY', use:'开放词汇目标定位', summary:'官方视觉 Skill，适合图片定位。', color:'#dbeafe'},
+  {name:'tao-generate-referring-expressions', scene:'vision', source:'nvidia', trust:'HIGH', status:'HEALTHY', use:'区域描述与框核验', summary:'官方视觉 Skill，适合描述检测框。', color:'#e0e7ff'},
+  {name:'vss-deploy-profile', scene:'vision', source:'nvidia', trust:'HIGH', status:'HEALTHY', use:'视频搜索与摘要', summary:'官方 VSS Skill，适合安防/园区/零售视频。', color:'#fae8ff'},
+  {name:'deepstream-generate-pipeline', scene:'vision', source:'nvidia', trust:'HIGH', status:'HEALTHY', use:'工业视觉 pipeline', summary:'官方 DeepStream Skill，适合 RTSP + 检测跟踪。', color:'#ffedd5'},
+  {name:'rag-blueprint', scene:'rag', source:'nvidia', trust:'HIGH', status:'HEALTHY', use:'企业内部知识库', summary:'官方 RAG Skill，适合内部文档问答。', color:'#d1fae5'},
+  {name:'cuopt-routing-api-python', scene:'optimization', source:'nvidia', trust:'HIGH', status:'HEALTHY', use:'路由 / 组合优化', summary:'官方 cuOpt Skill，适合物流与金融。', color:'#e0f2fe'},
+  {name:'portfolio-optimization', scene:'optimization', source:'nvidia', trust:'HIGH', status:'HEALTHY', use:'投资组合优化', summary:'官方组合优化 Skill，适合量化金融。', color:'#fef3c7'},
+  {name:'nemo-retriever', scene:'rag', source:'nvidia', trust:'HIGH', status:'HEALTHY', use:'检索增强', summary:'官方检索 Skill，适合 RAG 管线。', color:'#f3e8ff'},
+  {name:'skill-doctor', scene:'diagnostics', source:'community', trust:'HIGH', status:'HEALTHY', use:'Skill 健康诊断', summary:'自研 Skill，适合环境与配置排障。', color:'#ffedd5'},
+  {name:'local-pedestrian-detector', scene:'vision', source:'community', trust:'MEDIUM', status:'UNHEALTHY', use:'行人检测组合 Skill', summary:'自研组合 Skill，缺少部分治理产物。', color:'#fee2e2'}
+];
+let downloaded = new Set(['skill-doctor']);
+let nodes = [];
+let edges = [];
+let idCounter = 1;
+let dragging = null;
+let dragOffset = {x:0,y:0};
+function $(sel){return document.querySelector(sel)}
+function trustColor(trust){return trust==='HIGH'?'#16a34a':trust==='MEDIUM'?'#d97706':'#dc2626'}
+function statusClass(status){return status==='HEALTHY'?'ok':status==='UNHEALTHY'?'bad':'warn'}
+function switchTab(tab){
+  document.getElementById('tab-market').className = 'btn' + (tab==='market'?' active':'');
+  document.getElementById('tab-local').className = 'btn' + (tab=='local'?' active':'');
+  document.getElementById('panel-market').style.display = tab==='market'?'block':'none';
+  document.getElementById('panel-local').style.display = tab=='local'?'block':'none';
+}
+function appendLog(action, target, result, detail){
+  const el = $('#log');
+  const time = new Date().toLocaleString('zh-CN');
+  const cls = result==='通过'?'ok':result==='阻断'?'bad':'warn';
+  const line = `<div><span class="small">${time}</span> <span class="${cls}">[${action}]</span> ${target} — ${detail||result}</div>`;
+  el.innerHTML = line + el.innerHTML;
+}
+function renderPulse(item){
+  const el = $('#pulse-box');
+  const checks = item.checks || [];
+  const badges = checks.map(c=>`<span class="badge ${c.status==='PASS'?'pass':'fail'}">${c.name}: ${c.status}</span>`).join(' ');
+  el.innerHTML = `<div class="card"><div class="card-head"><strong>${item.name}</strong><span class="badge ${item.status==='HEALTHY'?'pass':'warn'}">${item.status}</span></div><div class="small">${item.summary||''}</div><div style="margin-top:8px">${badges}</div><div class="small" style="margin-top:6px">可信：${item.trust} | ${item.verdict||''}</div></div>` + el.innerHTML;
+}
+function renderResults(items){
+  const el = $('#results');
+  el.innerHTML = items.map(item=>`<div class="card">
+    <div class="card-head"><strong>${item.name}</strong><span class="badge ${item.status==='HEALTHY'?'pass':item.status==='UNHEALTHY'?'fail':'warn'}">${item.trust||''}</span></div>
+    <div class="small">${item.summary||item.use||''}</div>
+    <div class="small">场景：${item.scene} | 来源：${item.source} | 状态：${item.status||'UNKNOWN'}</div>
+    <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn primary" style="width:auto" onclick="downloadSkill('${item.name}')">下载积木</button>
+      <button class="btn" style="width:auto" onclick="inspectSkill('${item.name}')">查看安检</button>
+    </div>
+  </div>`).join('');
+}
+function renderToolbar(){
+  const el = $('#toolbar');
+  const items = MARKET.filter(m=>downloaded.has(m.name));
+  el.innerHTML = items.map(item=>`<div class="chip" draggable="true" data-name="${item.name}"><span class="dot" style="background:${trustColor(item.trust)}"></span>${item.name}</div>`).join('');
+  el.querySelectorAll('.chip').forEach(chip=>{
+    chip.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', chip.dataset.name); });
+    chip.addEventListener('click', ()=> addNode(chip.dataset.name));
+  });
+  const canvas = $('#canvas');
+  canvas.ondragover = e=> e.preventDefault();
+  canvas.ondrop = e=>{ e.preventDefault(); const name = e.dataTransfer.getData('text/plain'); if(name) addNode(name, e.offsetX, e.offsetY); };
+}
+function renderLocal(){
+  const el = $('#local-box');
+  el.innerHTML = Array.from(downloaded).map(name=>`<div class="chip"><span class="dot" style="background:#16a34a"></span>${name}</div>`).join('');
+}
+function addNode(name, x, y){
+  const skill = MARKET.find(s=>s.name===name) || {name, trust:'MEDIUM', status:'UNHEALTHY', use:name, color:'#fee2e2'};
+  const node = {
+    id:'n'+(idCounter++), name,
+    x: x ?? 80 + (nodes.length%4)*260,
+    y: y ?? 60 + Math.floor(nodes.length/4)*180,
+    status: skill.status, trust: skill.trust, use: skill.use, color: skill.color,
+    checks: []
+  };
+  nodes.push(node);
+  render();
+  appendLog('add', name, '已加入画布', node.status);
+}
+function removeNode(id){
+  nodes = nodes.filter(n=>n.id!==id);
+  edges = edges.filter(e=>e.from!==id && e.to!==id);
+  render();
+}
+function render(){
+  const container = $('#nodes');
+  container.innerHTML = nodes.map(n => {
+    const statusCls = statusClass(n.status);
+    const marker = n.status==='HEALTHY'?'✔':n.status==='UNHEALTHY'?'✘':'⚠';
+    return `<div class="brick" data-id="${n.id}" style="left:${n.x}px;top:${n.y}px;background:${n.color||'#f9fafb'}">
+      <div class="stud top"></div>
+      <div class="stud in"></div>
+      <div class="stud out"></div>
+      <div class="connector in"></div>
+      <div class="connector out"></div>
+      <div class="brick-header">
+        <div class="brick-title"><div class="brick-icon">◆</div>${n.name}</div>
+        <div><span class="badge ${statusCls}">${n.trust}</span><button class="btn" style="width:auto;padding:4px 8px;margin-left:6px" onclick="removeNode('${n.id}')">移除</button></div>
+      </div>
+      <div class="brick-body">${n.use || n.name}<div class="small">状态：${n.status}</div></div>
+    </div>`;
+  }).join('');
+  drawEdges();
+  initNodeDrag();
+}
+function drawEdges(){
+  const svg = $('#edges');
+  const byId = id => nodes.find(n=>n.id===id);
+  const defs = `<defs>
+    <linearGradient id="edgeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#16a34a"/>
+      <stop offset="100%" stop-color="#2563eb"/>
+    </linearGradient>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#9ca3af"></path>
+    </marker>
+  </defs>`;
+  const paths = edges.map(e=>{
+    const a = byId(e.from), b = byId(e.to);
+    if(!a||!b) return '';
+    const p1 = {x:a.x+220, y:a.y+42};
+    const p2 = {x:b.x, y:b.y+42};
+    const c = {x:(p1.x+p2.x)/2, y:(p1.y+p2.y)/2};
+    const main = `<path class="edge ${e.active?'active':''}" d="M ${p1.x} ${p1.y} C ${c.x} ${p1.y}, ${c.x} ${p2.y}, ${p2.x} ${p2.y}" marker-end="url(#arrow)"></path>`;
+    const flow = e.active ? `<path class="edge-flow" d="M ${p1.x} ${p1.y} C ${c.x} ${p1.y}, ${c.x} ${p2.y}, ${p2.x} ${p2.y}"></path>` : '';
+    return main + flow;
+  }).join('');
+  svg.innerHTML = defs + paths;
+}
+function initNodeDrag(){
+  nodes.forEach(n=>{
+    const el = document.querySelector(`.brick[data-id="${n.id}"]`);
+    if(!el) return;
+    el.addEventListener('mousedown', e=>{
+      if(e.target.tagName==='BUTTON') return;
+      dragging = n;
+      dragOffset.x = e.clientX - n.x;
+      dragOffset.y = e.clientY - n.y;
+      el.classList.add('dragging');
+      e.preventDefault();
+    });
+  });
+  window.addEventListener('mousemove', e=>{
+    if(!dragging) return;
+    dragging.x = e.clientX - dragOffset.x;
+    dragging.y = e.clientY - dragOffset.y;
+    const el = document.querySelector(`.brick[data-id="${dragging.id}"]`);
+    if(el){ el.style.left = dragging.x + 'px'; el.style.top = dragging.y + 'px'; }
+    drawEdges();
+  });
+  window.addEventListener('mouseup', ()=>{
+    if(!dragging) return;
+    const el = document.querySelector(`.brick[data-id="${dragging.id}"]`);
+    if(el) el.classList.remove('dragging');
+    dragging = null;
+  });
+}
+function resetCanvas(){
+  nodes=[]; edges=[]; idCounter=1; render(); $('#log').innerHTML='暂无记录'; $('#runner').innerHTML='底板已清空。';
+}
+function sleep(ms){return new Promise(res=>setTimeout(res,ms))}
+async function searchSkills(){
+  const scene = $('#scene').value;
+  const task = $('#task').value.trim();
+  const env = $('#env').value.trim();
+  const source = $('#source').value;
+  const resultsBox = $('#results');
+  resultsBox.innerHTML = '<div class="card"><div class="small"><span class="spin"></span> 正在全网搜索符合你描述的 Skill...</div></div>' + resultsBox.innerHTML;
+  $('#pulse-box').innerHTML = '<div class="small">第 1 步：检索候选 Skill。</div>';
+  let items = [];
+  try {
+    const payload = {
+      model: 'step-3.7-flash',
+      messages: [{role:'user', content: `场景：${scene}。任务：${task}。环境：${env}。来源偏好：${source}。`}],
+      temperature: 0.4,
+      max_tokens: 800,
+      source
+    };
+    const resp = await fetch('/api/search/skills', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+    let data = {};
+    try { data = await resp.json(); } catch (e) { data = {}; }
+    if (!resp.ok) {
+      throw new Error((data && data.detail) || ('HTTP ' + resp.status));
+    }
+    items = Array.isArray(data.results) ? data.results : [];
+  } catch (e) {
+    $('#pulse-box').innerHTML = '<div class="small">检索失败：'+e.message+'，已降级为本地候选积木。</div>';
+    items = MARKET.filter(x=>x.scene===scene);
+    if(source==='nvidia') items = items.filter(x=>x.source==='nvidia');
+    if(source==='community') items = items.filter(x=>x.source==='community');
+  }
+  if (!items.length) {
+    items = MARKET.filter(x=>x.scene===scene);
+    if(source==='nvidia') items = items.filter(x=>x.source==='nvidia');
+    if(source==='community') items = items.filter(x=>x.source==='community');
+  }
+  if (!items.length) items = MARKET.slice(0,6);
+  renderResults(items);
+  $('#pulse-box').innerHTML = '<div class="small">第 2 步：点击下方“批量安检”，用 SkillPulse 筛选可入库积木。</div>';
+  window.__pendingSearchItems = items;
+}
+async function batchInspect(){
+  const items = window.__pendingSearchItems || [];
+  if(!items.length){ alert('请先搜索 Skill'); return; }
+  const box = $('#pulse-box');
+  box.innerHTML = '<div class="small"><span class="spin"></span> 正在对 '+items.length+' 个候选 Skill 执行 SkillPulse 五道工序安检...</div>';
+  const passed = [];
+  for(const item of items){
+    const checks = [
+      {name:'Catalog', status:'PASS', detail:'frontmatter 与来源登记完整'},
+      {name:'Scanned', status: item.status==='HEALTHY'?'PASS':'FAIL', detail:'mock spector scan'},
+      {name:'Evaluated', status: item.status==='HEALTHY'?'PASS':'FAIL', detail:'BENCHMARK 与 evals'},
+      {name:'Signed', status: item.status==='HEALTHY'?'PASS':'FAIL', detail:'OMS signature check'},
+      {name:'Documented', status: item.status==='HEALTHY'?'PASS':'FAIL', detail:'skill-card present'}
+    ];
+    const allPass = checks.every(c=>c.status==='PASS');
+    if(allPass) passed.push(item);
+    renderPulse({...item, checks, status: allPass?'HEALTHY':'UNHEALTHY', trust: allPass?'HIGH':'LOW', verdict: allPass?'Safe to enter workflow':'Block release until repaired'});
+    await sleep(300);
+  }
+  renderResults(passed.length ? passed : items);
+  box.innerHTML = '<div class="small">安检完成，已筛出 '+passed.length+' 个可入库积木；未通过的已隐藏。</div>';
+  window.__pendingSearchItems = passed.length ? passed : items;
+}
+function inspectSkill(name){
+  const item = MARKET.find(x=>x.name===name);
+  if(!item) return;
+  const checks = [
+    {name:'Catalog', status:'PASS', detail:'frontmatter 与来源登记完整'},
+    {name:'Scanned', status: item.status==='HEALTHY'?'PASS':'FAIL', detail:'mock spector scan'},
+    {name:'Evaluated', status: item.status==='HEALTHY'?'PASS':'FAIL', detail:'BENCHMARK 与 evals'},
+    {name:'Signed', status: item.status==='HEALTHY'?'PASS':'FAIL', detail:'OMS signature check'},
+    {name:'Documented', status: item.status==='HEALTHY'?'PASS':'FAIL', detail:'skill-card present'}
+  ];
+  const allPass = checks.every(c=>c.status==='PASS');
+  renderPulse({...item, checks, status: allPass?'HEALTHY':'UNHEALTHY', trust: allPass?'HIGH':'LOW', verdict: allPass?'Safe to enter workflow':'Block release until repaired'});
+}
+function downloadSkill(name){
+  downloaded.add(name);
+  renderToolbar();
+  renderLocal();
+  appendLog('download', name, '已下载', '进入积木箱');
+}
+function downloadAllPassed(){ const cards = #results.querySelectorAll('.card'); let count = 0; cards.forEach(card => { const name = card.querySelector('strong')?.textContent?.trim(); if(!name) return; const statusText = Array.from(card.querySelectorAll('.badge, .small')).map(x=>x.textContent||'').join(' '); if(statusText.includes('HEALTHY') || statusText.includes('HIGH')) { downloadSkill(name); count++; } }); alert('已尝试下载 '+count+' 个通过安检的积木'); }
+async function runPipeline(){
+  if(nodes.length<2){ alert('请至少添加 2 个 Skill'); return; }
+  $('#runner').innerHTML='<div class="step"><div class="marker">⏳</div><div>正在请求 SkillPulse 后端执行拼搭...</div></div>';
+  appendLog('run','pipeline','开始','执行拼搭');
+  try {
+    const payload = {nodes: nodes.map(n=>({id:n.id,name:n.name,x:n.x,y:n.y})), edges: edges.map(e=>({from:e.from,to:e.to}))};
+    const data = await fetch(API_BASE + '/lego/run', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)}).then(r=>r.json());
+    nodes = data.nodes.map(n=>({id:n.id,name:n.name,x:n.x,y:n.y,status:n.status,trust:n.trust,use:n.name,color:n.color||'#f9fafb',checks:n.checks}));
+    edges = data.edges.map(e=>({from:e.from,to:e.to,active:e.active}));
+    render();
+    $('#runner').innerHTML = data.nodes.map((n,idx)=>{
+      const failed = (n.failed || []).join('、');
+      const cls = n.status==='HEALTHY'?'ok':n.status==='UNHEALTHY'?'bad':'warn';
+      const marker = idx===data.nodes.length-1 ? '⏳' : (n.status==='HEALTHY'?'✔':n.status==='UNHEALTHY'?'✘':'⚠');
+      return `<div class="step ${cls}"><div class="marker">${marker}</div><div><strong>${n.name}</strong><div class="small">状态：${n.status} | 可信：${n.trust}${failed?' | 失败：'+failed:''}</div></div></div>`;
+    }).join('') + (data.passed ? `<div class="step ok"><div class="marker">✔</div><div>拼搭已完成 SkillPulse 治理，可进入工作流。</div></div>` : `<div class="step bad"><div class="marker">✘</div><div>拼搭已被 SkillPulse 阻断，请修复后重试。</div></div>`);
+    data.logs.forEach(log=> appendLog(log.action, log.target, log.result, log.detail));
+  } catch (e) {
+    $('#runner').innerHTML='<div class="step bad"><div class="marker">✘</div><div>后端调用失败：'+e.message+'</div></div>';
+    appendLog('error','pipeline','失败',e.message);
+  }
+}
+(function init(){ renderToolbar(); renderLocal(); })();
+</script>
+<script>
+window.SKILLPULSE_BACKEND_CHAT = async function(messages){ const res = await fetch('/api/llm/chat', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({messages, model:'step-3.7-flash', temperature:0.7, max_tokens:1024})}); if(!res.ok){ const text = await res.text(); throw new Error('HTTP '+res.status+': '+text); } return await res.json(); };
+</body>
+</html>
+
+
+
+
+
+
+
+
+

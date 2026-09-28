@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SkillPulse — Skill Lego</title>
+<style>
+:root{
+  --bg:#eef1f5; --panel:#ffffff; --line:#e5e7eb; --text:#1f2937; --muted:#6b7280;
+  --accent:#2563eb; --accent-2:#60a5fa; --success:#16a34a; --danger:#dc2626; --warn:#d97706;
+  --stud:#f3f4f6; --stud-border:#d1d5db;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;overflow:hidden}
+header{height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;border-bottom:1px solid var(--line);background:#ffffff;position:relative;z-index:5;box-shadow:0 6px 20px rgba(0,0,0,.06)}
+.brand{font-weight:900;letter-spacing:.3px;font-size:17px}
+.brand span{color:var(--accent)}
+.topbar{display:flex;gap:10px;align-items:center}
+.pill{padding:6px 10px;border-radius:9999px;font-size:12px;border:1px solid var(--line);background:#f9fafb;color:#374151}
+.layout{display:grid;grid-template-columns:340px 1fr 320px;gap:12px;padding:12px;height:calc(100% - 56px)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:12px;backdrop-filter:blur(6px);display:flex;flex-direction:column;gap:10px;overflow:auto;box-shadow:0 10px 25px rgba(0,0,0,.04)}
+.title{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.18em;display:flex;align-items:center;gap:8px}
+.plate{background:#d6dadd;border-radius:18px;position:relative;overflow:hidden;min-height:0;box-shadow:inset 0 0 0 8px #c7ccd1, inset 0 0 0 12px #d6dadd}
+.plate-grid{position:absolute;inset:0;background-image:radial-gradient(circle at center, #c7ccd1 6px, transparent 7px);background-size:22px 22px;pointer-events:none}
+.brick{position:absolute;width:220px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:18px;box-shadow:0 8px 18px rgba(0,0,0,.08);cursor:grab;user-select:none;transition:transform .15s,box-shadow .2s}
+.brick:hover{transform:translateY(-2px);box-shadow:0 14px 28px rgba(0,0,0,.10)}
+.brick.dragging{transform:scale(1.04) rotate(-1deg);box-shadow:0 22px 40px rgba(0,0,0,.14);z-index:50}
+.brick-header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #f3f4f6}
+.brick-title{font-weight:800;font-size:13px;display:flex;align-items:center;gap:10px}
+.brick-icon{width:26px;height:26px;border-radius:10px;display:grid;place-items:center;font-size:13px;background:#e0f2fe;color:#0369a1;border:1px solid #bae6fd}
+.brick-body{padding:10px 12px;font-size:12px;color:#374151;line-height:1.5}
+.stud{position:absolute;width:14px;height:14px;border-radius:9999px;background:var(--stud);border:1px solid var(--stud-border);box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 2px 0 rgba(0,0,0,.06)}
+.stud.in{left:-8px}.stud.out{right:-8px}
+.stud.top{top:-9px;left:50%;transform:translateX(-50%)}
+.connector{position:absolute;top:38px;width:18px;height:18px;border-radius:9999px;background:#ffffff;border:2px solid #d1d5db;box-shadow:0 0 0 3px #ffffff, 0 0 0 5px #e5e7eb;transition:transform .2s}
+.connector:hover{transform:scale(1.25)}
+.connector.in{left:-11px}.connector.out{right:-11px}
+.connector.connected{background:var(--success);border-color:#bbf7d0;box-shadow:0 0 0 3px #ffffff, 0 0 0 5px #86efac}
+.edge{stroke:#cbd5e1;stroke-width:3;fill:none}
+.edge.active{stroke:url(--edgeGradient);stroke-width:4;filter:drop-shadow(0 0 8px rgba(37,99,235,.25))}
+.edge-flow{stroke:var(--accent);stroke-width:2;stroke-dasharray:5 5;fill:none;animation:flow 1s linear infinite}
+@keyframes flow{to{stroke-dashoffset:-10}}
+.chip{display:inline-flex;align-items:center;gap:8px;background:#f9fafb;border:1px solid #e5e7eb;padding:8px 10px;border-radius:14px;margin:0 6px 8px 0;cursor:grab;font-size:12px;transition:transform .15s,border-color .2s,box-shadow .2s}
+.chip:hover{border-color:#c7ccd1;transform:translateY(-1px);box-shadow:0 8px 18px rgba(0,0,0,.06)}
+.chip .dot{width:10px;height:10px;border-radius:9999px}
+.log{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:12px;line-height:1.55;color:#374151;background:#f9fafb;border:1px solid var(--line);border-radius:12px;padding:10px;max-height:52vh;overflow:auto}
+.log .ok{color:#15803d}.log .bad{color:#b91c1c}.log .warn{color:#b45309}
+.btn{background:#ffffff;color:#111827;border:1px solid #d1d5db;padding:8px 12px;border-radius:12px;cursor:pointer;font-size:13px;width:100%;transition:transform .08s,border-color .2s,box-shadow .2s}
+.btn:hover{border-color:#9ca3af;box-shadow:0 6px 14px rgba(0,0,0,.06)}.btn:active{transform:translateY(1px)}.btn.primary{background:var(--accent);border-color:#1d4ed8;color:#ffffff;box-shadow:0 8px 18px rgba(37,99,235,.18)}
+.btn.ghost{background:#f9fafb;border:1px dashed #d1d5db;color:#374151}
+.runner{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.step{display:flex;gap:10px;align-items:flex-start;background:#f9fafb;border:1px solid var(--line);border-radius:14px;padding:10px;font-size:12px;animation:fadeIn .4s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.step .marker{width:18px;height:18px;border-radius:9999px;border:1px solid #d1d5db;display:grid;place-items:center;font-weight:800;font-size:11px;margin-top:1px;background:#ffffff}
+.step.ok .marker{color:#15803d;border-color:#bbf7d0;background:#f0fdf4}.step.bad .marker{color:#b91c1c;border-color:#fecaca;background:#fef2f2}.step.warn .marker{color:#b45309;border-color:#fde68a;background:#fffbeb}
+.footer{padding:10px 18px;color:var(--muted);font-size:12px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;background:#ffffff}
+.small{font-size:11px;color:var(--muted)}
+#search-status{margin-bottom:8px;color:var(--muted)}
+#search-status[data-state="success"]{color:var(--success)}
+#search-status[data-state="warning"]{color:var(--warn)}
+#search-status[data-state="error"]{color:var(--danger)}
+hr{border:none;border-top:1px solid var(--line);margin:4px 0}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.field label{font-size:12px;color:#374151;font-weight:600}
+.field input,.field textarea,.field select{background:#ffffff;border:1px solid #d1d5db;border-radius:12px;padding:8px 10px;color:#111827;font-size:13px;outline:none;transition:border-color .2s,box-shadow .2s}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.10)}
+.card{background:#ffffff;border:1px solid var(--line);border-radius:16px;padding:12px;margin-bottom:10px;box-shadow:0 6px 14px rgba(0,0,0,.03)}
+.card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.badge{display:inline-block;padding:3px 8px;border-radius:9999px;font-size:12px;margin-right:6px;background:#f3f4f6;border:1px solid #e5e7eb;color:#374151}
+.badge.pass{background:#f0fdf4;color:#15803d;border-color:#bbf7d0}.badge.fail{background:#fef2f2;color:#b91c1c;border-color:#fecaca}.badge.warn{background:#fffbeb;color:#b45309;border-color:#fde68a}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.spin{width:14px;height:14px;border:2px solid #e5e7eb;border-top-color:var(--accent);border-radius:50%;display:inline-block;animation:spin 1s linear infinite;margin-left:8px;vertical-align:middle}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tab{display:flex;gap:8px;margin-bottom:10px}
+.tab button{flex:1}
+.tab .active{background:var(--accent);border-color:#1d4ed8;color:#ffffff}
+.shelf{background:#ffffff;border:1px dashed #d1d5db;border-radius:14px;padding:10px;min-height:44px}
+.port{position:absolute;top:56px;width:16px;height:16px;border-radius:50%;background:#fff;border:2px solid #cbd5e1;cursor:crosshair}.port.in{left:-10px}.port.out{right:-10px}.brick.selected{outline:2px solid #2563eb;outline-offset:2px}.schema{font-family:ui-monospace,monospace;font-size:11px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:8px;white-space:pre-wrap}
+#auth-gate{position:fixed;inset:0;z-index:100;background:#eef1f5;display:grid;place-items:center;padding:20px}#auth-gate[hidden]{display:none}#auth-card{max-width:410px;width:100%}.business-mode .expert-only{display:none!important}.business-mode.engineer-role #mode-button{display:inline-block!important}.business-mode #node-preview,.business-mode #version-box,.business-mode #compat-notes{display:none!important}#business-helper{display:none}.business-mode #business-helper{display:block}#account-label{font-size:12px;color:#374151}#repo-list .card{margin-top:8px}
+/* Visual refresh: calm system surfaces, clear hierarchy, and bounded scrolling. */
+:root{
+  --bg:#f5f5f7;--panel:#fff;--line:#e7e7ec;--text:#1d1d1f;--muted:#6e6e73;
+  --accent:#007aff;--accent-2:#6cb5ff;--success:#1d9b60;--danger:#d72d42;--warn:#b66a12;
+  --stud:#fff;--stud-border:#c8cbd0;
+}
+html,body{min-width:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Arial,sans-serif;line-height:1.45;background:var(--bg);color:var(--text)}
+header{height:68px;padding:0 24px;gap:24px;background:rgba(255,255,255,.88);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-color:rgba(0,0,0,.07);box-shadow:none}
+.brand{font-size:19px;font-weight:750;letter-spacing:-.035em;white-space:nowrap}.brand span{font-weight:550;color:#66717f}
+.topbar{gap:8px;min-width:0}.topbar .btn{white-space:nowrap}.topbar .pill{white-space:nowrap}
+.pill{border-color:#ececf0;background:#f5f5f7;color:#6e6e73;border-radius:999px;padding:8px 12px}
+.layout{grid-template-columns:minmax(310px,340px) minmax(0,1fr) minmax(360px,400px);gap:14px;padding:14px;height:calc(100dvh - 112px);min-height:0}
+.panel{min-width:0;min-height:0;padding:18px;gap:16px;border:1px solid rgba(0,0,0,.06);border-radius:24px;background:rgba(255,255,255,.94);box-shadow:0 9px 34px rgba(31,39,53,.055);overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#c7c9cf transparent}
+.panel::-webkit-scrollbar,.schema::-webkit-scrollbar,.log::-webkit-scrollbar{width:8px}.panel::-webkit-scrollbar-thumb,.schema::-webkit-scrollbar-thumb,.log::-webkit-scrollbar-thumb{background:#c7c9cf;border-radius:99px}
+.title{font-size:13px;font-weight:700;text-transform:none;letter-spacing:.01em;color:#424247;line-height:1.3}
+.small{font-size:12px;line-height:1.55;color:var(--muted);overflow-wrap:anywhere}
+.plate{min-width:0;background:#e8eaed;border-radius:24px;box-shadow:inset 0 0 0 1px #d9dce0,0 9px 34px rgba(31,39,53,.055)}
+.plate-grid{background-image:radial-gradient(circle at center,#c9ccd2 2px,transparent 2.8px);background-size:23px 23px;opacity:.8}
+.brick{border:1px solid rgba(0,0,0,.11);border-radius:19px;box-shadow:0 10px 28px rgba(31,39,53,.11)}
+.brick:hover{box-shadow:0 16px 30px rgba(31,39,53,.15)}.brick.selected{outline:2px solid var(--accent);outline-offset:3px}
+.brick-title{min-width:0;font-weight:720;letter-spacing:-.02em;overflow-wrap:anywhere;line-height:1.25}.brick-body{overflow-wrap:anywhere;line-height:1.55}
+.brick-icon{flex:0 0 26px;background:#f3f7fc;color:var(--accent);border-color:#dceaf8}
+.btn{border-radius:11px;border:1px solid #d7d8dd;background:#fff;color:#26272b;padding:9px 13px;font-size:13px;font-weight:570;line-height:1.3;box-shadow:none;transition:background .16s,border-color .16s,box-shadow .16s,transform .12s}
+.btn:hover{background:#f8f9fb;border-color:#b9bcc4;box-shadow:0 3px 10px rgba(31,39,53,.06)}.btn:focus-visible,summary:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid rgba(0,122,255,.22);outline-offset:2px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 5px 14px rgba(0,122,255,.18)}.btn.primary:hover{background:#006ee6;border-color:#006ee6;box-shadow:0 8px 18px rgba(0,122,255,.24)}
+.btn.ghost{border:1px solid #e1e2e7;background:#f5f5f7;color:#3d424a}.btn.ghost:hover{background:#eceef2}.btn:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+.tab{gap:3px;padding:4px;background:#f1f2f5;border-radius:13px}.tab .btn{border:0;border-radius:10px;background:transparent;color:#60656f;box-shadow:none}.tab .active{background:#fff;color:#1d1d1f;box-shadow:0 1px 5px rgba(25,30,40,.12)}
+.field{gap:7px;margin-bottom:14px}.field label{font-size:12px;font-weight:650;color:#424247}.field input,.field textarea,.field select{width:100%;min-width:0;border:1px solid #d9dbe1;border-radius:11px;background:#fff;padding:10px 12px;font-size:13px;color:var(--text)}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,122,255,.12)}.field textarea{resize:vertical}
+input[type=file]{max-width:100%;font-size:12px;color:var(--muted)}
+.card{min-width:0;margin-bottom:0;padding:15px;border:1px solid #e9eaf0;border-radius:18px;background:#fcfcfd;box-shadow:none;overflow-wrap:anywhere}
+.card-head{gap:10px}.card-head strong{overflow-wrap:anywhere}.badge{border-radius:999px;font-size:11px;font-weight:650}.badge.ok,.badge.pass{background:#e8f7ef;border-color:#c5ebd5;color:#207a4b}
+.badge.fail{background:#fff0f1;border-color:#ffd5da;color:#b92f43}.badge.warn{background:#fff6e9;border-color:#fbe1b7;color:#9a651e}
+.grid{grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}.shelf{border-color:#d9dbe1;background:#fafbfc}
+.chip{background:#fff;border-color:#e4e6eb;border-radius:12px;overflow-wrap:anywhere}
+.inspector{padding:14px;gap:12px}.inspector>div{flex:0 0 auto!important;min-height:auto!important;min-width:0}.inspector>div:not(.card){padding:16px;background:#fbfbfd;border:1px solid #e9eaf0;border-radius:19px}.inspector>hr{display:none}
+.inspector .title{margin-bottom:9px}.inspector #node-controls{min-width:0;overflow-wrap:anywhere}.inspector #node-controls>div{min-width:0}.inspector #node-controls .btn{margin-top:5px}
+.inspector #node-inputs{display:grid;gap:9px}.inspector #node-inputs input{width:100%!important;min-width:0;font:inherit}
+.action-grid{display:flex;flex-wrap:wrap;gap:8px}.action-grid .btn{width:auto;flex:1 1 125px}
+.advanced-actions,.schema-disclosure{margin-top:12px;border-top:1px solid #e9eaf0;padding-top:11px}.advanced-actions summary,.schema-disclosure summary{cursor:pointer;color:#515b68;font-size:12px;font-weight:630;list-style:revert}.advanced-actions[open] summary,.schema-disclosure[open] summary{margin-bottom:12px}
+.schema{max-height:220px;overflow:auto;overflow-wrap:anywhere;word-break:break-word;white-space:pre-wrap;font-size:11px;line-height:1.5;border:1px solid #e7e9ed;background:#f7f8fa}
+.runner{min-height:42px;max-height:300px;overflow-y:auto;overflow-x:hidden;overflow-wrap:anywhere;margin-top:0}.step{border-color:#e8eaf0;background:#fff;line-height:1.5}
+.log{min-height:70px;max-height:230px;overflow:auto;overflow-wrap:anywhere;white-space:normal;border-color:#e8eaf0;background:#fff;line-height:1.5}
+#my-workflows,#my-runs{margin-top:12px;display:grid;gap:7px}#my-workflows .btn,#my-runs .btn{text-align:left;width:100%;overflow-wrap:anywhere}
+#workflow-message,#run-detail,#repo-message,#review-message,#user-message{margin-top:9px;overflow-wrap:anywhere}
+#review-detail pre{max-width:100%;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;padding:10px;border-radius:12px;background:#f5f6f8}
+.footer{height:44px;padding:0 24px;background:#f5f5f7;border:0;gap:20px}.footer>div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#auth-gate{background:radial-gradient(circle at 50% 0,#e9f2ff 0,#f5f5f7 44%,#f5f5f7 100%)}#auth-card{max-width:430px;padding:28px 30px;border-radius:25px;background:#fff;box-shadow:0 20px 70px rgba(31,39,53,.11)}#auth-card h2{font-size:25px;letter-spacing:-.04em;margin:0 0 8px}#auth-card .small{font-size:12px}
+/* Quiet workspace: keep the canvas central and prevent dense reports from filling a column. */
+body{background:#f6f7f9}
+header{border-bottom:1px solid #eceef2;background:rgba(255,255,255,.94)}
+.brand span{color:#7a818b}.topbar .pill{display:none}
+.layout{grid-template-columns:minmax(300px,340px) minmax(0,1fr) minmax(370px,410px);gap:16px;padding:16px;height:calc(100dvh - 112px)}
+.panel{gap:14px;border-radius:22px;box-shadow:0 10px 32px rgba(22,31,46,.045)}
+.library>.card{flex:none}.library .title{margin-bottom:10px}
+.plate{background:#f2f4f7;box-shadow:inset 0 0 0 1px #e4e7ec,0 10px 32px rgba(22,31,46,.045)}
+.plate-grid{background-image:radial-gradient(circle at center,#d3d8e1 1.7px,transparent 2.5px);background-size:24px 24px;opacity:.68}
+.brick{background:#fff!important;border-color:#e3e7ed;box-shadow:0 10px 24px rgba(28,40,60,.1)}
+.brick-header{display:block;border-bottom-color:#eef0f3}.brick-title{align-items:flex-start;font-size:13px}.brick-label{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere}
+.brick-header>div:last-child{display:flex;align-items:center;justify-content:space-between;margin-top:8px}.brick-header .btn{font-size:11px!important;padding:4px 8px!important;margin-left:0!important}
+.brick-body{font-size:12px;color:#606a76}.brick-body>.brick-description{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.inspector{gap:12px;padding:14px}.inspector>div,.inspector>details{flex:0 0 auto!important;min-height:auto!important;min-width:0;width:100%}
+.inspector>div:not(.card),.inspector>details{padding:16px;background:#fff;border:1px solid #ebedf1;border-radius:18px;box-shadow:none}
+.inspector .title{font-size:13px;color:#272d36}.inspector .small{font-size:12px;line-height:1.5}
+.inspector #node-controls{display:grid;gap:12px}.node-heading{font-size:15px;line-height:1.25;letter-spacing:-.02em;overflow-wrap:anywhere}.node-description{margin-top:4px;overflow-wrap:anywhere}
+.node-actions{display:flex;flex-wrap:wrap;gap:7px}.node-actions .btn{width:auto!important;margin:0!important;flex:0 1 auto}
+.node-ports{padding:10px 12px;border-radius:11px;background:#f7f8fa;color:#59616c;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
+#node-inputs{margin:0!important;padding-top:12px;border-top:1px solid #eef0f3}.node-input-row{display:grid;gap:5px;font-size:12px;color:#3b414a}
+.inspector #node-inputs input{padding:9px 10px;border:1px solid #dce0e6;border-radius:10px;background:#fff;font-size:13px}
+.inspector #node-inputs input:focus{border-color:var(--accent);outline:3px solid rgba(0,122,255,.12)}
+.disclosure>summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:680;color:#303741}
+.disclosure>summary::-webkit-details-marker{display:none}.disclosure>summary::after{content:'⌄';font-size:18px;font-weight:400;color:#8a929c;line-height:1}.disclosure[open]>summary::after{transform:rotate(180deg)}
+.disclosure-body{padding-top:14px;margin-top:13px;border-top:1px solid #edf0f3}
+.schema-disclosure{margin-top:14px}.schema-disclosure summary{font-size:12px}.schema-disclosure .schema{margin-top:10px}
+.health-report{padding:12px 13px;border:1px solid #e9edf1;border-radius:15px;background:#fff;box-shadow:0 3px 12px rgba(28,40,60,.03);margin-top:8px}
+.health-report-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.health-report-head strong{font-size:13px;overflow-wrap:anywhere}.health-report-meta{margin-top:3px;color:#69727e;font-size:11px}
+.health-detail{margin-top:10px;border-top:1px solid #eef0f3;padding-top:9px}.health-detail summary{font-size:12px;font-weight:650;color:#007aff;cursor:pointer;width:max-content}.health-detail[open] summary{margin-bottom:10px}
+.health-check{display:grid;grid-template-columns:74px 52px minmax(0,1fr);align-items:start;gap:8px;padding:8px 0;border-top:1px solid #f1f2f4;font-size:11px;line-height:1.5;overflow-wrap:anywhere}.health-check:first-child{border-top:0}.health-check-name{font-weight:680;color:#303741}.health-check-detail{color:#606a76}.health-check-pass{color:#168352}.health-check-fail{color:#be3448}.health-check-other{color:#a06c22}
+#pulse-box:empty{display:none}#results .card{padding:14px}#results .card .small{margin-top:4px}#results .card-head{align-items:flex-start}#results .card-head strong{min-width:0}#results .card-head .badge{flex:0 0 auto;white-space:nowrap;margin-right:0}
+.inspector #log,.inspector #runner,.schema{max-width:100%;min-width:0;overflow-wrap:anywhere}
+.runner .step>div{min-width:0;max-width:100%}.runner details{margin-top:8px}.runner details summary{cursor:pointer;color:var(--accent);font-size:12px;font-weight:650}.runner details .schema{margin:8px 0 0}
+@media (max-width:1240px){
+  body{overflow:auto}header{height:auto;min-height:68px;flex-wrap:wrap;padding:12px 18px}.topbar{flex-wrap:wrap}
+  .layout{height:auto;grid-template-columns:minmax(300px,340px) minmax(0,1fr);align-items:start}.library{max-height:650px}.plate{min-height:650px}.inspector{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start}.inspector>hr{display:none}.inspector>div{height:auto}
+  .footer{height:auto;min-height:44px;flex-wrap:wrap;padding:10px 18px}
+}
+@media (max-width:800px){
+  .topbar .pill{display:none}.layout{display:flex;flex-direction:column;gap:12px;padding:12px}.library,.inspector{width:100%;max-height:none;overflow:visible}.plate{width:100%;height:520px;min-height:520px}.inspector{display:flex;flex-direction:column}.inspector>div{width:100%}.footer>div{white-space:normal}
+}
+</style>
+<link rel="stylesheet" href="/frontend/lego/ui.css?v=20260927-report-brick" />
+</head>
+<body>
+<div id="auth-gate"><div class="card" id="auth-card"><h2>SkillPulse 演示登录</h2><p class="small" id="auth-hint">正在检查账号状态…</p><div class="field"><label>用户名</label><input id="auth-name" autocomplete="username" /></div><div class="field"><label>密码（至少 12 位）</label><input id="auth-password" type="password" autocomplete="current-password" /></div><button class="btn primary" onclick="submitAuth()" id="auth-button">登录</button><p id="auth-error" style="color:#b91c1c" aria-live="polite"></p><p class="small">可通过各自的 SSH 隧道共享同一实例；请勿把服务直接暴露到公网。</p></div></div>
+<header>
+  <div class="brand"><span class="brand-mark" aria-hidden="true">S</span><span class="brand-name">SkillPulse</span><span class="brand-sub">Agent Studio</span></div>
+  <div class="topbar">
+    <span id="account-label"></span><button class="btn ghost" style="width:auto" onclick="logoutCurrentUser()">退出</button>
+    <button class="btn ghost expert-only" style="width:auto" onclick="toggleViewMode()" id="mode-button">切换业务视图</button>
+    <div class="pill">需求 → 搜索 → 安检 → 下载 → 拼搭</div>
+    <button class="btn ghost" style="width:auto" onclick="resetCanvas()">清空底板</button>
+    <button class="btn primary" style="width:auto" onclick="runPipeline()">运行拼搭</button>
+  </div>
+</header>
+<div class="layout">
+  <aside class="panel library">
+    <div class="tab">
+      <button class="btn active" id="tab-market" onclick="switchTab('market')">Skill 积木库</button>
+      <button class="btn" id="tab-local" onclick="switchTab('local')">我的积木箱</button>
+    </div>
+    <div id="panel-market">
+      <div class="title">1. 你的需求</div>
+      <div class="field">
+        <label>场景</label>
+        <select id="scene">
+          <option value="vision">视觉 / 视频</option>
+          <option value="rag">知识库 / RAG</option>
+          <option value="optimization">优化 / 调度</option>
+          <option value="diagnostics" selected>诊断 / 排障</option>
+          <option value="multimodal">多模态 Agent</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>任务描述</label>
+        <textarea id="task" rows="3">我需要一个能检查 Skill 健康状态、验证签名、生成合规报告的本地 Skill。</textarea>
+      </div>
+      <div class="field">
+        <label>运行环境</label>
+        <input id="env" value="本机演示（未验证 DGX Spark）" />
+      </div>
+      <div class="field">
+        <label>偏好来源</label>
+        <select id="source">
+          <option value="auto" selected>本地 + GitHub 在线发现</option>
+          <option value="local">仅本地已准入资产</option>
+          <option value="nvidia_online">NVIDIA GitHub 目录</option>
+          <option value="online">公开 GitHub Skill</option>
+          <option value="local_sample">本地演示复刻样本</option>
+          <option value="local_project">SkillPulse 自研 Skill</option>
+          <option value="dgx_semantic">CUDA 语义检索（DGX 可用）</option>
+        </select>
+      </div>
+      <button class="btn primary" onclick="searchSkills()">搜索匹配 Skill</button>
+      <div class="small search-caption">本地匹配 · GitHub 候选需隔离验证</div>
+      <button class="btn" type="button" onclick="interpretTask()">StepFun 理解需求</button>
+      <div class="small" id="ai-status">模型状态待检查。点击后向 StepFun 发送需求与本地目录简介；成功后仅自动检索本地。GitHub 发现需另点“搜索匹配 Skill”。</div>
+      <div id="ai-result" aria-live="polite"></div>
+      <div id="business-helper" class="card"><strong>业务用户快速体验</strong><p class="small">选择本地 Skill 后，可直接运行真实五项检查并生成 Markdown 报告；这不是模型推理或第三方合规认证。</p></div>
+      <div class="card guided-check"><strong>检查一个 Skill</strong><div class="field"><label for="diagnose-target">本地目标</label><select id="diagnose-target"><option value="">正在加载本地目录…</option></select></div><button class="btn primary" type="button" onclick="quickStartTemplate()">生成检查报告</button><button id="curated-demo-button" class="btn" type="button" style="display:none;margin-top:8px" onclick="quickStartCuratedTemplate()">再用固定外部动作验证报告</button><div id="guided-result" class="small" aria-live="polite">报告将显示在画布积木中。</div></div>
+      <div class="title" style="margin-top:14px">2. SkillPulse 安检</div>
+      <div id="pulse-box" class="small">安检结果将显示在这里；完整报告仅在点击“查看详情”后打开。</div>
+      <div class="title" style="margin-top:14px">3. 搜索结果</div><div id="search-status" class="small" aria-live="polite">等待搜索...</div>
+      <div class="small">本地通过安检的 Skill 可下载；线上候选只能查看来源，专家可导入隔离区初审。</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+        <button class="btn primary expert-only" style="width:auto" onclick="batchInspect()">批量 SkillPulse 安检</button>
+        <button class="btn expert-only" style="width:auto" onclick="downloadAllPassed()">下载全部通过项</button>
+      </div>
+      <div id="results" class="grid">请先搜索，再批量安检。</div>
+      <div class="title" style="margin-top:16px">GitHub 在线候选 · 未验证</div>
+      <div id="online-results" class="grid small">尚未进行在线发现。</div>
+    </div>
+    <div id="panel-local" style="display:none">
+      <div class="title">已下载到本地的积木</div>
+      <div id="local-box" class="shelf">暂无已下载 Skill。</div>
+    </div>
+    <div class="expert-only card"><strong>私有 Skill 待审仓库</strong><p class="small">仅上传 ZIP 做静态预检；始终隔离，不运行、下载或加入画布。ZIP 须含一个以 Skill 名命名的顶层目录。</p><input id="repo-file" type="file" accept=".zip,application/zip" /><button class="btn" onclick="uploadPrivateSkill()">上传并隔离检查</button><div id="repo-message" class="small"></div><div id="repo-list"></div></div>
+    <div class="expert-only card"><strong>双人初审队列</strong><p class="small">另一名专家可查看只读文件清单并记录初审。初审通过只允许进入未来的隔离评估，不能运行或发布；专家可不可逆地撤销此版本。</p><button class="btn" onclick="loadReviewQueue()">刷新待审队列</button><div id="review-queue" class="small"></div><div id="review-detail" class="small"></div><div class="field"><label>初审决定</label><select id="review-decision"><option value="CHANGES_REQUESTED">要求修改</option><option value="REJECTED">拒绝</option><option value="PRELIMINARY_PASS">准许进入隔离评估（不等于运行或发布）</option></select></div><div class="field"><label>理由（10–1000 字；撤销时也必填）</label><textarea id="review-reason" rows="3"></textarea></div><button class="btn" onclick="submitSelectedReview()">记录初审决定</button><button class="btn" onclick="revokeSelectedUpload()">撤销选中版本</button><div id="review-message" class="small"></div></div>
+    <div class="expert-only card"><strong>本地演示账号</strong><p class="small">专家可创建业务或专家账号；上传记录仅所属专家可见。</p><div class="field"><label>用户名</label><input id="new-username" autocomplete="off" /></div><div class="field"><label>密码（至少 12 位）</label><input id="new-password" type="password" autocomplete="new-password" /></div><div class="field"><label>角色</label><select id="new-role"><option value="business">业务用户</option><option value="engineer">专家</option></select></div><button class="btn" onclick="createLocalUser()">创建账号</button><div id="user-message" class="small"></div></div>
+  </aside>
+  <main class="plate" id="canvas">
+    <div class="plate-grid"></div>
+    <svg id="edges" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:1"></svg>
+    <div id="nodes" style="position:absolute;inset:0;z-index:2"></div>
+    <div id="warnings" style="position:absolute;left:12px;top:12px;z-index:3;max-width:260px"></div>
+  </main>
+  <aside class="panel inspector">
+    <div>
+      <div class="title">Lego 工具箱</div>
+      <div class="small">点击或拖拽积木到画布；单节点可调试，流水线至少需要两个 Skill 并连线。</div>
+      <div id="toolbar" class="toolbar">先下载 Skill，这里才会出现积木。</div>
+    </div>
+    <hr />
+    <div>
+      <div class="title">拼搭操作</div>
+      <div class="action-grid">
+        <button class="btn primary" style="width:auto" onclick="runPipeline()">运行拼搭</button>
+        <button class="btn ghost" style="width:auto" onclick="resetCanvas()">清空底板</button>
+      </div>
+      <details class="advanced-actions expert-only"><summary>高级操作与审计</summary><div class="action-grid">
+        <button class="btn ghost" style="width:auto" onclick="addNode('if_branch')">添加分支</button>
+        <button class="btn ghost" style="width:auto" onclick="addNode('loop')">添加循环</button>
+        <button class="btn expert-only" style="width:auto" onclick="exportPipeline()">导出 YAML</button>
+        <button class="btn expert-only" style="width:auto" onclick="exportPipeline('openapi')">导出 API 描述</button>
+        <button class="btn expert-only" style="width:auto" onclick="exportAudit()">导出审计</button>
+        <button class="btn expert-only" style="width:auto" onclick="verifyAudit()">校验审计链</button>
+        <button class="btn expert-only" style="width:auto" onclick="exportAuditReport()">本次审计报告</button>
+      </div></details>
+    </div>
+    <div class="inspector-section">
+      <div class="title">选中积木</div>
+      <div id="node-controls"></div>
+      <details class="schema-disclosure expert-only"><summary>查看原始 Skill Schema</summary><div id="node-preview" class="schema"></div></details>
+    </div>
+    <hr />
+    <div class="inspector-section">
+      <div class="title">拼搭输出</div>
+      <div class="runner" id="runner">添加 Skill 后点击“运行拼搭”。</div>
+    </div>
+    <details class="disclosure"><summary>我的流程与运行摘要</summary><div class="disclosure-body"><p class="small">流程不含输入值；运行历史仅保存脱敏摘要。载入后请重新填写必填输入。</p><div class="field"><label>流程名称</label><input id="workflow-name" placeholder="例如：知识库安检流程" /></div><button class="btn" onclick="saveCurrentWorkflow()">保存当前流程</button><div id="workflow-message" class="small"></div><div id="my-workflows" class="small"></div><div id="my-runs" class="small"></div><div id="run-detail" class="small"></div></div></details>
+    <hr />
+    <details class="disclosure expert-only"><summary>本地操作/运行审计</summary><div class="disclosure-body"><div class="small" id="audit-status">新记录使用哈希链；旧记录未验证</div><div class="log" id="log">暂无记录</div></div></details>
+  </aside>
+</div>
+<div class="footer">
+  <div>SkillPulse — 更用户友好的方向：需求 → 搜索 → 安检 → 下载 → 拼搭。</div>
+  <div class="small">本地匹配 · 受限子进程原型（不是安全沙箱）</div>
+</div>
+<dialog id="health-dialog" class="health-dialog" aria-labelledby="health-dialog-title">
+  <div class="health-dialog-shell">
+    <div class="health-dialog-header"><div><div class="health-eyebrow">SKILLPULSE TRUST REPORT</div><h2 id="health-dialog-title">Skill 安检报告</h2></div><button class="dialog-close" type="button" onclick="closeHealthDialog()" aria-label="关闭安检报告">×</button></div>
+    <div id="health-dialog-content" class="health-dialog-content"></div>
+  </div>
+</dialog>
+<script>
+const API_BASE = '/api';
+let MARKET = [];
+const SCHEMA_MAP = Object.create(null);
+let CONTROL_SCHEMAS = {};
+let downloaded = new Set();
+let nodes = [];
+let edges = [];
+let idCounter = 1;
+let selectedNodeId = null;
+let currentRun = null;
+let dragging = null;
+let nodeDragBound = false;
+let dragOffset = {x:0,y:0};
+let connectingFrom = null;
+let CURRENT_USER = null;
+let CURRENT_VIEW = 'expert';
+let AUTH_INITIALIZED = false;
+let SELECTED_REVIEW = null;
+let ONLINE_RESULTS = [];
+function $(sel){return document.querySelector(sel)}
+function esc(value){return String(value ?? '').replace(/[&<>"']/g, ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]))}
+function sourceLabel(value){return ({local_project:'SkillPulse 自研',local_sample:'本地演示复刻',external_curated_action:'NVIDIA 固定脚本动作 · SkillPulse 适配',reference:'仅供参考'})[value]||'本地来源未登记'}
+async function authRequest(path, body){
+  const response=await fetch(API_BASE+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const data=await response.json(); if(!response.ok) throw new Error(typeof data.detail==='string'?data.detail:'请求失败 HTTP '+response.status); return data;
+}
+function applyUser(user){
+  CURRENT_USER=user; CURRENT_VIEW=user.role==='engineer'?'expert':'business';
+  document.body.classList.toggle('engineer-role',user.role==='engineer');
+  applyViewMode(); $('#account-label').textContent=user.username+' · '+(user.role==='engineer'?'专家':'业务'); $('#auth-gate').hidden=true;
+  refreshStepfunStatus();
+}
+async function refreshStepfunStatus(){
+  try{
+    const response=await fetch(API_BASE+'/ai/status');
+    if(response.status===401){$('#ai-status').textContent='登录已失效，请重新登录后检查 StepFun 状态。';return;}
+    if(response.status===404){$('#ai-status').textContent='当前仍是旧版后端：请关闭旧 SkillPulse Backend，再运行 start-stepfun.cmd。';return;}
+    if(!response.ok) throw new Error('状态不可用');
+    const data=await response.json();
+    $('#ai-status').textContent=data.available?'StepFun '+data.model+' 已配置；解析成功后仅自动检索本地。GitHub 发现需另点“搜索匹配 Skill”。':'StepFun 未配置；本地搜索和安检仍可使用。';
+  }catch(_error){$('#ai-status').textContent='无法检查模型状态；请确认新版后端已启动且登录有效。本地功能不受影响。';}
+}
+async function interpretTask(){
+  const box=$('#ai-result');
+  const task=$('#task').value.trim();
+  if(task.length<3){box.textContent='请先输入至少 3 个字的任务。';return;}
+  box.textContent='正在让 StepFun 解析需求…';
+  try{
+    const response=await fetch(API_BASE+'/ai/interpret',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task,scene:$('#scene').value,environment:$('#env').value.trim()})});
+    if(response.status===401) throw new Error('登录已失效，请重新登录');
+    if(response.status===404) throw new Error('当前后端版本过旧，请关闭旧 Backend 并运行 start-stepfun.cmd');
+    const data=await response.json();
+    if(!response.ok) throw new Error(typeof data.detail==='string'?data.detail:'模型请求失败');
+    const list=(values)=>Array.isArray(values)&&values.length?esc(values.join('、')):'未识别';
+    const picks=(data.recommendations||[]).map(item=>'<div class="ai-pick"><strong>'+esc(item.name)+'</strong> <span class="badge '+(item.eligible?'pass':'fail')+'">'+esc(item.risk)+'</span><div class="small">目录用途：'+esc(item.use||'未提供')+' · '+(item.eligible?'本地安检通过':'本地安检阻断')+'</div><div class="small">匹配理由：'+esc(item.model_match_reason||'模型未提供逐项理由')+'</div><details><summary>目录证据与限制</summary><div class="small">'+esc(item.catalog_summary||'目录无简介')+' · 场景 '+esc(item.catalog_scene||'未知')+' · 来源 '+esc(sourceLabel(item.source))+'</div><div class="small">模型推荐不代表来源身份或签名已验证。</div></details><button class="health-detail-link" type="button" onclick="inspectSkill(\''+esc(item.name)+'\')">查看本地安检 →</button></div>').join('');
+    box.innerHTML='<div class="card ai-summary"><strong>StepFun 需求解析</strong><div class="small">任务：'+esc(data.intent||'暂无意图摘要')+'</div><div class="small">需要：'+list(data.capabilities)+'</div><div class="small">约束：'+list(data.constraints)+'</div><div class="small">缺口：'+list(data.gaps)+'</div><div class="small">下一步：'+esc(data.next_step||'先查看本地安检')+'</div>'+picks+'<details><summary>查看整体判断依据</summary><div class="small">'+esc(data.reason||'未提供')+'</div></details><div class="small">模型只推荐；信任和运行权限由本地安检决定。</div></div>';
+    try{await searchSkills({localOnly:true});}
+    catch(searchError){const status=$('#search-status');status.textContent='模型解析成功，但本地检索失败：'+searchError.message;status.dataset.state='error';}
+  }catch(error){box.textContent='StepFun 暂不可用：'+error.message+'。可继续使用本地搜索。';}
+}
+function applyViewMode(){
+  document.body.classList.toggle('business-mode',CURRENT_VIEW==='business');
+  $('#mode-button').textContent=CURRENT_VIEW==='business'?'返回专家视图':'切换业务视图';
+  if(selectedNodeId) renderControls();
+}
+function toggleViewMode(){
+  if(CURRENT_USER?.role!=='engineer') return;
+  CURRENT_VIEW=CURRENT_VIEW==='expert'?'business':'expert'; applyViewMode();
+  if(CURRENT_VIEW==='expert'){loadAudit();loadUploads();loadReviewQueue();}
+}
+async function authStatus(){
+  try{
+    const response=await fetch(API_BASE+'/auth/status'); const data=await response.json(); if(!response.ok) throw new Error('HTTP '+response.status);
+    AUTH_INITIALIZED=data.initialized;
+    $('#auth-hint').textContent=AUTH_INITIALIZED?'请输入已有账号；业务账号只可使用已准入 Skill。':'首次启动：请创建本机专家账号（密码至少 12 位）。';
+    $('#auth-button').textContent=AUTH_INITIALIZED?'登录':'创建专家账号并登录';
+    if(data.user){applyUser(data.user);await startWorkspace();}
+  }catch(e){$('#auth-error').textContent='无法连接本地后端：'+e.message;}
+}
+async function submitAuth(){
+  const username=$('#auth-name').value.trim(), password=$('#auth-password').value;
+  $('#auth-error').textContent='';
+  try{
+    if(!AUTH_INITIALIZED){await authRequest('/auth/bootstrap',{username,password}); AUTH_INITIALIZED=true;}
+    const data=await authRequest('/auth/login',{username,password}); $('#auth-password').value=''; applyUser(data.user); await startWorkspace();
+  }catch(e){$('#auth-error').textContent=e.message;}
+}
+async function logoutCurrentUser(){
+  try{await fetch(API_BASE+'/auth/logout',{method:'POST'});}finally{
+    CURRENT_USER=null; downloaded.clear(); MARKET=[]; nodes=[]; edges=[]; selectedNodeId=null; currentRun=null; SELECTED_REVIEW=null;
+    $('#auth-gate').hidden=false; $('#auth-password').value=''; $('#auth-hint').textContent='请输入已有账号。'; $('#auth-button').textContent='登录'; AUTH_INITIALIZED=true;
+    $('#toolbar').textContent='先下载 Skill，这里才会出现积木。'; $('#repo-list').innerHTML=''; $('#review-queue').innerHTML=''; $('#my-workflows').innerHTML=''; $('#my-runs').innerHTML='';
+  }
+}
+async function startWorkspace(){
+  try{await loadSkills();}catch(e){$('#toolbar').textContent=e.message;}
+  if(CURRENT_USER?.role==='engineer'){await loadAudit(); await loadUploads(); await loadReviewQueue();}
+  await loadMyWorkflows(); await loadMyRuns();
+  previewCurrentSelection(); renderWarnings(validateTopology());
+}
+function trustColor(trust){return trust==='HIGH'?'#16a34a':trust==='LOCAL'?'#007aff':trust==='MEDIUM'||trust==='MED'?'#d97706':'#dc2626'}
+function statusClass(status){return status==='HEALTHY'?'ok':status==='UNHEALTHY'?'bad':'warn'}
+function typeLabel(schema){return (schema?.inputs || []).map(p=>p.name + ':' + p.type + (p.required?'*':'')).join(', ') || '无输入端口'}
+function switchTab(tab){
+  document.getElementById('tab-market').className = 'btn' + (tab==='market'?' active':'');
+  document.getElementById('tab-local').className = 'btn' + (tab=='local'?' active':'');
+  document.getElementById('panel-market').style.display = tab==='market'?'block':'none';
+  document.getElementById('panel-local').style.display = tab=='local'?'block':'none';
+}
+function appendLog(action, target, result, detail){
+  const el = document.querySelector('#log');
+  const time = new Date().toLocaleString('zh-CN');
+  const cls = result==='通过'?'ok':result==='阻断'?'bad':'warn';
+  const line = '<div><span class="small">' + esc(time) + '</span> <span class="' + cls + '">[' + esc(action) + ']</span> ' + esc(target) + ' — ' + esc(detail || result) + '</div>';
+  el.innerHTML = line + el.innerHTML;
+}
+async function recordOperation(action,target,nodeId=null){
+  if(CURRENT_USER?.role!=='engineer' || CURRENT_VIEW==='business') return;
+  try{
+    const response=await fetch(API_BASE+'/audit/logs',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,target,node_id:nodeId})});
+    if(!response.ok) throw new Error('HTTP '+response.status);
+  }catch(e){appendLog('audit',target,'失败','本地操作未写入审计链：'+e.message);}
+}
+function renderResults(items){
+  const el = document.querySelector('#results');
+  el.innerHTML = items.length ? items.map(item=>{
+    const curated=item.source==='external_curated_action';
+    const sourceDetail=curated
+      ? '<div class="small">固定来源：'+esc(item.repository||'')+' @ '+esc((item.commit||'').slice(0,12))+' · '+esc(item.path||'')+'</div>'
+        +'<div class="small">仅固定脚本动作；无上游发布者签名，且不代表完整 Skill 已发布。</div>'
+        +(String(item.source_url||'').startsWith('https://github.com/NVIDIA/skills/blob/')?'<a class="health-detail-link" href="'+esc(item.source_url)+'" target="_blank" rel="noopener noreferrer">查看固定来源 ↗</a>':'')
+      : '';
+    return '<div class="card"><div class="card-head"><strong>'+esc(item.name)+'</strong><span class="badge '+(item.status==='HEALTHY'?'pass':item.status==='UNHEALTHY'?'fail':'warn')+'">'+esc(item.risk||item.trust||'UNKNOWN')+'</span></div>'
+      +'<div class="small result-summary">'+esc(item.use||item.summary||item.description||'')+'</div>'
+      +'<div class="small">来源：'+esc(sourceLabel(item.source))+' · '+esc(item.status||'UNKNOWN')+'</div>'
+      +sourceDetail
+      +'<div class="result-actions"><button class="btn primary" style="width:auto" '+(item.status==='HEALTHY'?'':'disabled title="安检未通过，已阻止载入"')
+      +' onclick="downloadSkill(\''+esc(item.name)+'\','+(curated?'false':'true')+')">'+(curated?'载入受控积木':'下载积木')+'</button>'
+      +'<button class="btn" style="width:auto" onclick="inspectSkill(\''+esc(item.name)+'\')">查看安检</button></div>'
+      +'<details class="result-more"><summary>匹配依据与信任边界</summary><div class="small">'+esc(item.match_hint||'本地词项匹配')+' · 上游发布者身份未核验。</div></details></div>';
+  }).join('') : '<div class="small">没有匹配的本地 Skill。</div>';
+}
+function renderOnlineResults(data){
+  ONLINE_RESULTS=Array.isArray(data.results)?data.results:[];
+  const warnings=(data.warnings||[]).map(note=>'<div class="small" role="status">'+esc(note)+'</div>').join('');
+  const cards=ONLINE_RESULTS.map((item,index)=>'<div class="card"><div class="card-head"><strong>'+esc(item.name)+'</strong><span class="badge warn">未验证</span></div>'+
+    '<div class="small">来源：'+esc(item.source_platform)+' · 发布账号：'+esc(item.publisher)+'</div>'+
+    '<div class="small">仅供查看 · 不可加入画布</div>'+
+    '<details class="result-more"><summary>来源与验证状态</summary><div class="small">仓库：'+esc(item.repository)+' · 固定提交：'+esc((item.commit_sha||'').slice(0,12))+'</div>'+
+    '<div class="small">文件：'+esc(item.skill_path)+'/SKILL.md</div><div class="small">'+esc(item.match_hint)+'</div>'+
+    '<div class="small">许可证：未核实'+(item.license_file_url?' · <a href="'+esc(item.license_file_url)+'" target="_blank" rel="noopener noreferrer">查看仓库许可文件（内容与适用范围待人工确认） ↗</a>':' · 未发现仓库根目录许可文件')+'。未完成本地五项安检；来源身份和数字签名未验证。</div></details>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><a class="btn" style="width:auto" href="'+esc(item.source_url)+'" target="_blank" rel="noopener noreferrer">查看原始文件 ↗</a>'+
+    '<button class="btn expert-only" style="width:auto" type="button" onclick="importOnlineSkill('+index+')">导入隔离区初审</button></div></div>').join('');
+  $('#online-results').innerHTML=warnings+(cards||'<div class="small">没有发现匹配的线上 Skill 文件。可换用英文能力关键词；网络受限时仍可使用本地资产。</div>');
+}
+async function importOnlineSkill(index){
+  if(CURRENT_USER?.role!=='engineer') return;
+  const item=ONLINE_RESULTS[index]; if(!item) return;
+  const box=$('#search-status'); box.textContent='正在按固定提交获取 '+item.name+'，并放入隔离区…'; box.dataset.state='neutral';
+  try{
+    const data=await authRequest('/repository/import-github',{repository:item.repository,commit_sha:item.commit_sha,skill_path:item.skill_path});
+    box.textContent='已隔离导入 '+esc(data.report.skill)+'；不能下载、加入画布或运行。'; box.dataset.state='warning';
+    await loadUploads(); await loadReviewQueue();
+  }catch(e){box.textContent='线上导入未完成：'+e.message;box.dataset.state='error';}
+}
+function renderHealthSummary(name, report){
+  const checks=Array.isArray(report.checks)?report.checks:[];
+  const passed=checks.filter(check=>check.status==='PASS').length;
+  const badge=report.status==='HEALTHY'?'pass':report.status==='UNHEALTHY'?'fail':'warn';
+  return '<article class="health-summary"><div class="health-summary-main"><strong>'+esc(name)+'</strong><span class="badge '+badge+'">'+esc(report.risk||'UNKNOWN')+'</span></div>'+
+    '<div class="health-summary-bottom"><span>'+esc(report.status||'UNKNOWN')+' · '+passed+'/'+checks.length+' 项通过 · 签名未验证</span><button class="health-detail-link" type="button" data-health-name="'+esc(name)+'">查看详情 →</button></div></article>';
+}
+// 只从本次实际执行的 skill-doctor 输出读取报告；静态标签不能生成报告卡。
+function reportForBrick(node){
+  if(node.name!=='skill-report' || !currentRun?.nodes) return null;
+  const reportRun=currentRun.nodes.find(item=>item.id===node.id && item.name==='skill-report' && item.status==='HEALTHY' && typeof item.outputs?.report==='string');
+  const incoming=edges.find(edge=>edge.to===node.id && nodes.find(item=>item.id===edge.from)?.name==='skill-doctor');
+  const doctorRun=incoming && currentRun.nodes.find(item=>item.id===incoming.from && item.name==='skill-doctor' && item.status==='HEALTHY');
+  if(!reportRun || !doctorRun || typeof doctorRun.outputs?.result!=='string') return null;
+  try{
+    const report=JSON.parse(doctorRun.outputs.result);
+    const names=new Set((report.checks||[]).map(check=>check.name));
+    if(!report.skill || !['Catalog','Scanned','Evaluated','Signed','Documented'].every(name=>names.has(name))) return null;
+    return report;
+  }catch(_error){return null;}
+}
+function showBrickReport(id){
+  const node=nodes.find(item=>item.id===id);
+  const report=node && reportForBrick(node);
+  if(report) showHealthDialog(report.skill,report,id);
+}
+function downloadBrickReport(id){
+  const node=nodes.find(item=>item.id===id);
+  const report=node && reportForBrick(node);
+  if(!report) return;
+  const url=URL.createObjectURL(new Blob([JSON.stringify(report,null,2)],{type:'application/json'}));
+  const link=document.createElement('a'); link.href=url; link.download='skillpulse-'+report.skill+'-run-report.json'; link.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function closeHealthDialog(){
+  const dialog=document.querySelector('#health-dialog');
+  if(dialog.open) dialog.close();
+}
+function showHealthDialog(name, report, reportNodeId=''){
+  const dialog=document.querySelector('#health-dialog');
+  const checks=Array.isArray(report.checks)?report.checks:[];
+  const passed=checks.filter(check=>check.status==='PASS').length;
+  const badge=report.status==='HEALTHY'?'pass':report.status==='UNHEALTHY'?'fail':'warn';
+  const rows=checks.map((check,index)=>{
+    const cls=check.status==='PASS'?'health-check-pass':check.status==='FAIL'?'health-check-fail':'health-check-other';
+    return '<div class="health-check"><span class="health-check-index">'+String(index+1).padStart(2,'0')+'</span><div><strong class="health-check-name">'+esc(check.name==='Signed'?'Signed · 本地哈希':check.name)+'</strong><p class="health-check-detail">'+esc(check.detail||'暂无说明')+'</p></div><span class="health-check-status '+cls+'">'+esc(check.status)+'</span></div>';
+  }).join('');
+  document.querySelector('#health-dialog-title').textContent=name;
+  document.querySelector('#health-dialog-content').innerHTML='<div class="health-dialog-overview"><div><div class="health-dialog-label">安检结论</div><div class="health-dialog-result">'+esc(report.status||'UNKNOWN')+'</div><div class="health-dialog-sub">'+passed+' / '+checks.length+' 项基础检查通过</div></div><span class="badge '+badge+'">风险 '+esc(report.risk||'UNKNOWN')+'</span></div>'+ 
+    '<div class="health-dialog-section-title">五项检查</div>'+(rows||'<div class="small">暂无检查明细。</div>')+
+    '<p class="health-dialog-note">本报告为本地基础验证；静态扫描不等同完整恶意代码检测。完整性：'+(report.integrity_verified?'本地哈希一致':'未通过')+'；公钥签名：未验证；上游发布者身份：未验证。目录来源标记不构成认证。</p>'+ 
+    (reportNodeId?'<button class="btn" style="width:auto;margin-top:12px" type="button" onclick="downloadBrickReport(\''+esc(reportNodeId)+'\')">下载本次运行 JSON</button>':'<a class="btn" style="display:inline-block;width:auto;margin-top:12px;text-decoration:none" href="'+API_BASE+'/demo/download-report/'+encodeURIComponent(name)+'">下载当前 JSON 检查结果</a>');
+  if(!dialog.open) dialog.showModal();
+}
+function renderToolbar(){
+  const el = document.querySelector('#toolbar');
+  const items = MARKET.filter(m=>downloaded.has(m.name));
+  el.innerHTML = items.map(item=>'<div class="chip" draggable="true" data-name="' + item.name + '"><span class="dot" style="background:' + trustColor(item.trust) + '"></span>' + item.name + '</div>').join('');
+  el.querySelectorAll('.chip').forEach(chip=>{
+    chip.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', chip.dataset.name); });
+    chip.addEventListener('click', ()=> addNode(chip.dataset.name));
+  });
+  const canvas = document.querySelector('#canvas');
+  canvas.ondragover = e=> e.preventDefault();
+  canvas.ondrop = e=>{ e.preventDefault(); const name = e.dataTransfer.getData('text/plain'); if(name) addNode(name, e.offsetX, e.offsetY); };
+}
+function renderLocal(){
+  const el = document.querySelector('#local-box');
+  el.innerHTML = Array.from(downloaded).map(name=>'<div class="chip"><span class="dot" style="background:#16a34a"></span>' + name + '</div>').join('');
+}
+async function loadSkills(){
+  const [response, controlsResponse] = await Promise.all([fetch(API_BASE + '/lego/skills'), fetch(API_BASE + '/controls')]);
+  if(!response.ok) throw new Error('加载本地 Skill 目录失败 HTTP ' + response.status);
+  if(!controlsResponse.ok) throw new Error('加载控制节点契约失败 HTTP ' + controlsResponse.status);
+  CONTROL_SCHEMAS = await controlsResponse.json();
+  const skills = await response.json();
+  MARKET = skills.map(item=>{
+    if(item.schema) SCHEMA_MAP[item.name] = item.schema;
+    return {...item, color: item.status==='HEALTHY' ? '#d1fae5' : '#fee2e2', scene:'local'};
+  });
+  $('#curated-demo-button').style.display=MARKET.some(item=>item.name==='nvidia-skill-card-validator'&&item.status==='HEALTHY')?'':'none';
+  renderToolbar(); renderLocal();
+  const target = $('#diagnose-target');
+  if(target){
+    const targets = skills.filter(item=>!['skill-doctor','skill-report'].includes(item.name));
+    target.innerHTML = targets.map(item=>'<option value="'+esc(item.name)+'">'+esc(item.name)+' · '+esc(item.status)+'</option>').join('');
+    if(targets.some(item=>item.name==='rag-blueprint')) target.value='rag-blueprint';
+  }
+}
+function addNode(name, x, y){
+  const marketItem = MARKET.find(s=>s.name===name);
+  const skill = marketItem || {name, trust:'MEDIUM', status:'UNHEALTHY', use:name, color:'#fee2e2'};
+  const ctrl = CONTROL_SCHEMAS[name];
+  const schema = ctrl || SCHEMA_MAP[name] || null;
+  const controlType = ctrl ? name : 'skill';
+  if(!schema){alert('节点契约尚未加载或不受支持。');return;}
+  if(!ctrl && (!marketItem || marketItem.status !== 'HEALTHY' || !downloaded.has(name) || !schema)){ alert('Skill 未通过真实安检或尚未下载，禁止加入画布。'); return; }
+  const canvasWidth=document.querySelector('#canvas').clientWidth;
+  const columns=Math.max(1,Math.floor((canvasWidth-32)/260));
+  const node = {
+    id:'n'+(idCounter++), name,
+    x: x ?? 16 + (nodes.length%columns)*260,
+    y: y ?? 48 + Math.floor(nodes.length/columns)*180,
+    status: ctrl ? 'HEALTHY' : skill.status, trust: ctrl ? 'LOCAL' : skill.risk || skill.trust, use: ctrl ? ctrl.description : skill.description || skill.use || name, color: ctrl ? '#e0e7ff' : skill.color || '#dbeafe',
+    node_schema: schema, inputType: (schema?.inputs || []).map(p=>p.type).join('|') || 'any', outputType: (schema?.outputs || []).map(p=>p.type).join('|') || 'any', controlType, inputs: {}
+  };
+  nodes.push(node);
+  currentRun=null;
+  recordOperation('add',name,node.id);
+  render();
+  appendLog('add', name, '已加入画布', node.status);
+  renderWarnings(validateTopology());
+}
+function removeNode(id){
+  const removed=nodes.find(n=>n.id===id);
+  if(removed) recordOperation('remove',removed.name,id);
+  currentRun=null;
+  selectedNodeId = selectedNodeId === id ? null : selectedNodeId;
+  nodes = nodes.filter(n=>n.id!==id);
+  edges = edges.filter(e=>e.from!==id && e.to!==id);
+  render();
+  renderControls();
+  document.querySelector('#node-preview').textContent = '选中节点已移除。';
+  renderWarnings(validateTopology());
+}
+function render(){
+  const container = document.querySelector('#nodes');
+  container.innerHTML = nodes.map(n => {
+    const statusCls = statusClass(n.status);
+    const selectedClass = n.id===selectedNodeId ? ' selected' : '';
+    const marker = n.status==='HEALTHY'?'✔':n.status==='UNHEALTHY'?'✘':'⚠';
+    const report=reportForBrick(n);
+    const passed=report?.checks?.filter(check=>check.status==='PASS').length || 0;
+    const reportBody=n.name==='skill-report'
+      ? (report?'<div class="brick-report"><div class="brick-report-kicker">本次真实检查 · '+esc(report.skill)+'</div><div class="brick-report-result"><strong>'+esc(report.status||'UNKNOWN')+'</strong><span class="badge '+(report.risk==='LOW'?'pass':report.risk==='HIGH'?'fail':'warn')+'">'+esc(report.risk||'UNKNOWN')+'</span></div><div class="brick-report-count">'+passed+' / '+report.checks.length+' 项通过 · 数字签名未验证</div><button class="health-detail-link brick-report-link" type="button" onmousedown="event.stopPropagation()" onclick="event.stopPropagation();showBrickReport(\''+esc(n.id)+'\')">查看完整报告 →</button></div>'
+        :'<div class="brick-report-empty">运行后显示真实检查结论</div>')
+      :'<div class="brick-description">'+esc(n.use || n.name)+'</div>';
+    return '<div class="brick' + selectedClass + '" data-id="' + n.id + '" style="left:' + n.x + 'px;top:' + n.y + 'px;background:' + (n.color||'#f9fafb') + '" onclick="selectNode(\'' + n.id + '\')">' +
+      '<div class="stud top"></div>' +
+      '<div class="stud in"></div>' +
+      '<div class="stud out"></div>' +
+      '<div class="port in" data-node="' + n.id + '" data-port="in"></div>' +
+      '<div class="port out" data-node="' + n.id + '" data-port="out"></div>' +
+      '<div class="connector in"></div>' +
+      '<div class="connector out"></div>' +
+      '<div class="brick-header">' +
+        '<div class="brick-title"><div class="brick-icon">◆</div><span class="brick-label" title="' + esc(n.name) + '">' + esc(n.name) + '</span></div>' +
+        '<div><span class="badge ' + statusCls + '">' + esc(n.trust) + '</span><button class="btn" style="width:auto;padding:4px 8px;margin-left:6px" onclick="event.stopPropagation(); removeNode(\'' + n.id + '\')">移除</button></div>' +
+      '</div>' +
+      '<div class="brick-body">' + reportBody + (n.name==='skill-report'?'':'<div class="small">状态：'+esc(n.status)+'</div>') + '</div>' +
+    '</div>';
+  }).join('');
+  drawEdges();
+  initNodeDrag();
+}
+function initNodeDrag(){
+  nodes.forEach(n=>{
+    const el = document.querySelector('.brick[data-id="' + n.id + '"]');
+    if(!el) return;
+    el.addEventListener('mousedown', e=>{
+      const port = e.target.closest('.port');
+      if(port){ e.preventDefault(); return; }
+      dragging = n;
+      dragOffset.x = e.clientX - n.x;
+      dragOffset.y = e.clientY - n.y;
+      el.classList.add('dragging');
+      e.preventDefault();
+    });
+  });
+  if(nodeDragBound) return;
+  nodeDragBound = true;
+  window.addEventListener('mousemove', e=>{
+    if(!dragging) return;
+    dragging.x = e.clientX - dragOffset.x;
+    dragging.y = e.clientY - dragOffset.y;
+    const el = document.querySelector('.brick[data-id="' + dragging.id + '"]');
+    if(el){ el.style.left = dragging.x + 'px'; el.style.top = dragging.y + 'px'; }
+    drawEdges();
+  });
+  window.addEventListener('mouseup', ()=>{
+    if(!dragging) return;
+    const el = document.querySelector('.brick[data-id="' + dragging.id + '"]');
+    if(el) el.classList.remove('dragging');
+    dragging = null;
+  });
+}
+function drawEdges(){
+  const svg = document.querySelector('#edges');
+  const byId = id => nodes.find(n=>n.id===id);
+  const defs = '<defs>' +
+    '<linearGradient id="edgeGradient" x1="0%" y1="0%" x2="100%" y2="0%">' +
+      '<stop offset="0%" stop-color="#16a34a"/>' +
+      '<stop offset="100%" stop-color="#2563eb"/>' +
+    '</linearGradient>' +
+    '<marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="3" orient="auto" markerUnits="strokeWidth">' +
+      '<path d="M0,0 L0,6 L9,3 z" fill="#9ca3af"></path>' +
+    '</marker>' +
+  '</defs>';
+  const paths = edges.map(e=>{
+    const a = byId(e.from), b = byId(e.to);
+    if(!a||!b) return '';
+    const p1 = {x:a.x+220, y:a.y+42};
+    const p2 = {x:b.x, y:b.y+42};
+    const c = {x:(p1.x+p2.x)/2, y:(p1.y+p2.y)/2};
+    const main = '<path class="edge ' + (e.active?'active':'inactive') + '" d="M ' + p1.x + ' ' + p1.y + ' C ' + c.x + ' ' + p1.y + ', ' + c.x + ' ' + p2.y + ', ' + p2.x + ' ' + p2.y + '" marker-end="url(#arrow)"></path>';
+    const flow = e.active ? '<path class="edge-flow" d="M ' + p1.x + ' ' + p1.y + ' C ' + (p1.x+p2.x)/2 + ' ' + p1.y + ', ' + (p1.x+p2.x)/2 + ' ' + p2.y + ', ' + p2.x + ' ' + p2.y + '"></path>' : '';
+    return main + flow;
+  }).join('');
+  svg.innerHTML = defs + paths;
+}
+function selectNode(id){
+  if(selectedNodeId){
+    const previous=nodes.find(n=>n.id===selectedNodeId);
+    if(previous) previous.inputs=collectSelectedInputs();
+  }
+  selectedNodeId = id;
+  render();
+  renderControls();
+  renderSchema(nodes.find(n=>n.id===id)?.name || '');
+  previewCurrentSelection();
+  // 选中画布节点时，让右侧焦点回到节点设置，避免高级操作挤占可视区域。
+  const advanced=document.querySelector('.advanced-actions');
+  if(advanced) advanced.open=false;
+  const inspector=document.querySelector('.inspector');
+  const section=inspector?.querySelector('.inspector-section');
+  if(inspector && section && getComputedStyle(inspector).overflowY!=='visible'){
+    const top=section.getBoundingClientRect().top-inspector.getBoundingClientRect().top+inspector.scrollTop-14;
+    inspector.scrollTo({top:Math.max(0,top),behavior:'smooth'});
+  }
+}
+function renderControls(){
+  const el = document.querySelector('#node-controls');
+  const node = nodes.find(n=>n.id===selectedNodeId);
+  if(!node){ el.innerHTML = ''; return; }
+  const schema = node.node_schema || {inputs:[], outputs:[]};
+  const inputFields = (schema.inputs || []).map(port => {
+    const value=node.inputs[port.name] ?? '';
+    const display=typeof value==='string' ? value : JSON.stringify(value);
+    return '<label class="node-input-row">' + esc(port.name) + (port.required?' *':'') + ' · ' + esc(port.type) + '<input data-key="' + esc(port.name) + '" value="' + esc(display) + '" placeholder="' + esc(port.description) + '" /></label>';
+  }).join('');
+  el.innerHTML = '<div><div class="node-heading"><strong>' + esc(node.name) + '</strong></div><div class="small node-description">' + esc(node.use||node.name) + '</div></div>' +
+    '<div class="node-actions">' +
+      (CURRENT_VIEW==='expert'?'<button class="btn" style="width:auto" onclick="debugNode(\'' + node.id + '\')">单节点调试</button>':'') +
+      '<button class="btn" style="width:auto" onclick="removeNode(\'' + node.id + '\')">移除</button>' +
+      (CURRENT_VIEW==='expert' && node.controlType==='skill' ? '<button class="btn" style="width:auto" onclick="checkCompatibility(\'' + node.name + '\')">依赖兼容性</button>' : '') +
+    '</div>' +
+    (CURRENT_VIEW==='expert'?'<div class="node-ports">输入：' + esc(typeLabel(schema)) + '<br>输出：' + esc((schema.outputs||[]).map(p=>p.name+':'+p.type).join(', ')||'无输出端口') + '</div>':'') +
+    '<div id="compat-notes" class="small"></div><div id="version-box" class="small"></div>' +
+    '<div id="node-inputs">' + (inputFields || '<div class="small">当前节点无固定必填输入。</div>') + '</div>';
+  renderSchema(node.name);
+  if(CURRENT_VIEW==='expert') renderVersionControls(node.name);
+  highlightConflictNodes(node.name);
+}
+function renderSchema(name){
+  const schema = SCHEMA_MAP[name] || CONTROL_SCHEMAS[name];
+  const el = document.querySelector('#node-preview');
+  if(!el) return;
+  el.textContent = schema ? JSON.stringify({name:schema.name, version:schema.version, description:schema.description, inputs:schema.inputs, outputs:schema.outputs, resources:schema.resources}, null, 2) : '缺少 Skill Schema';
+}
+function highlightConflictNodes(name){
+  document.querySelectorAll('.brick').forEach(el=> el.style.borderColor = '');
+}
+
+function validateTopology(){
+  const warnings = [];
+  edges.forEach((edge, idx)=>{
+    const source = nodes.find(n=>n.id===edge.from);
+    const target = nodes.find(n=>n.id===edge.to);
+    if(!source || !target){ warnings.push({edgeIndex:idx, message:'连线引用节点缺失'}); return; }
+    const outputs=source.node_schema?.outputs||[], inputs=(target.node_schema?.inputs||[]).filter(p=>target.controlType==='skill'||p.name==='value');
+    const compatible=outputs.some(a=>inputs.some(b=>a.type===b.type||a.type==='any'||b.type==='any'||a.type==='text'&&b.type==='string'||a.type==='string'&&b.type==='text'));
+    if(!compatible){
+      warnings.push({edgeIndex:idx, message: source.name + ' 输出端口与 ' + target.name + ' 输入端口类型不匹配'});
+    }
+    if(source.controlType==='if_branch' && !['true','false'].includes(edge.route)) warnings.push({edgeIndex:idx,message:'分支出线必须选择 true 或 false 路由'});
+  });
+  const namedCounts = {};
+  nodes.filter(n=>n.controlType==='skill').forEach(n=>{ namedCounts[n.name] = (namedCounts[n.name]||0) + 1; });
+  Object.entries(namedCounts).forEach(([name,count])=>{
+    if(count > 1) warnings.push({nodeId:name, message:'重复节点：' + name});
+  });
+  nodes.forEach(n=>{
+    const hasIncoming=edges.some(e=>e.to===n.id);
+    const required=(n.node_schema?.inputs||[]).filter(p=>p.required);
+    const missing=required.filter(p=>{
+      if(hasIncoming && (n.controlType!=='skill' && p.name==='value' || n.controlType==='skill' && required.length===1)) return false;
+      return n.inputs?.[p.name]===undefined||n.inputs?.[p.name]===null||String(n.inputs[p.name]).trim()==='';
+    });
+    if(missing.length) warnings.push({nodeId:n.id, message:n.name + ' 缺少输入：' + missing.map(p=>p.name).join(', ')});
+  });
+  nodes.filter(n=>n.controlType==='if_branch').forEach(n=>{
+    const routes=edges.filter(e=>e.from===n.id).map(e=>e.route).sort();
+    if(routes.join(',')!=='false,true') warnings.push({nodeId:n.id,message:'分支需要各一条 true 和 false 出线'});
+  });
+  return warnings;
+}
+function renderWarnings(warnings){
+  const el = document.querySelector('#warnings');
+  if(!warnings.length){ el.innerHTML = '<div class="small" style="color:#15803d">拓扑校验通过，暂无阻断性问题。</div>'; return; }
+  el.innerHTML = warnings.map(w => '<div class="small" style="color:#b91c1c">' + w.message + '</div>').join('');
+}
+function collectSelectedInputs(){
+  const node = nodes.find(n=>n.id===selectedNodeId);
+  if(!node) return {};
+  const inputs = {...(node.inputs || {})};
+  const fields = document.querySelectorAll('#node-inputs input[data-key]');
+  fields.forEach(input => {
+    const port=(node.node_schema?.inputs||[]).find(p=>p.name===input.dataset.key);
+    const value=input.value.trim();
+    if(!value && !port?.required){delete inputs[input.dataset.key];return;}
+    if(port?.type==='json' && value){
+      try{inputs[input.dataset.key]=JSON.parse(value);}
+      catch{inputs[input.dataset.key]=value;}
+    }else if(port?.type==='boolean' && ['true','false'].includes(value.toLowerCase())){
+      inputs[input.dataset.key]=value.toLowerCase()==='true';
+    }else if(port?.type==='integer' && /^[0-9]+$/.test(value)){
+      inputs[input.dataset.key]=Number(value);
+    }else{inputs[input.dataset.key]=input.value;}
+  });
+  return inputs;
+}
+function previewCurrentSelection(){
+  const el = document.querySelector('#node-preview');
+  if(!selectedNodeId){ el.textContent = '尚未选中节点。'; return; }
+  const node = nodes.find(n=>n.id===selectedNodeId);
+  el.textContent = JSON.stringify({name: node.name, schema: node.node_schema, inputType: node.inputType, outputType: node.outputType, controls: node.controlType ? [node.controlType] : [], inputs: collectSelectedInputs()}, null, 2);
+}
+function renderPipelineSteps(data){
+  const el = document.querySelector('#pipeline-steps');
+  if(!el){ return; }
+  const nodes = data.nodes || [];
+  el.innerHTML = nodes.map(n => {
+    const cls = n.status==='HEALTHY' ? 'step ok' : n.status==='UNHEALTHY' ? 'step bad' : 'step';
+    const marker = n.status==='HEALTHY' ? '✔' : n.status==='UNHEALTHY' ? '✘' : '⏳';
+    const detail = (n.failed && n.failed.length) ? (' - ' + n.failed[0]) : '';
+    return '<div class="' + cls + '"><div class="marker">' + marker + '</div><div>' + n.name + detail + '</div></div>';
+  }).join('');
+}
+function highlightRunNodes(data){
+  const nodes = data.nodes || [];
+  nodes.forEach(n => {
+    const el = document.querySelector('.brick[data-id="' + n.id + '"]');
+    if(!el){ return; }
+    const color = n.status==='HEALTHY' ? '#16a34a' : n.status==='UNHEALTHY' ? '#dc2626' : '#d97706';
+    el.style.boxShadow = '0 0 0 3px ' + color;
+  });
+}
+function renderRunResult(data, mode='run'){
+  const el = document.querySelector('#runner');
+  edges.forEach(edge=>{edge.active=Boolean((data.edges||[]).find(item=>item.from===edge.from&&item.to===edge.to&&item.route===edge.route)?.active);});
+  render();
+  const lines = (data.logs || []).map(l => '<div><span class="small">' + esc(l.time || '') + '</span> <span class="' + (l.result==='通过'?'ok':l.result==='阻断'?'bad':'warn') + '">[' + esc(l.action) + ']</span> ' + esc(l.target) + ' — ' + esc(l.detail || l.result) + '</div>').join('');
+  const finalNode=(data.nodes||[]).filter(n=>n.status==='HEALTHY').at(-1);
+  const label=finalNode?.name==='skill-report'?'真实本地检查结果（非模型推理）':'本地示例输出（可能为 mock）';
+  let finalOutput='';
+  if(finalNode){
+    const reportText=finalNode.name==='skill-report' ? finalNode.outputs?.report : null;
+    const outputText=typeof reportText==='string' ? reportText : JSON.stringify(finalNode.outputs||{},null,2);
+    const firstLine=typeof reportText==='string' ? reportText.split('\n').find(line=>line.startsWith('结论：')) : '';
+    finalOutput=finalNode.name==='skill-report' && nodes.some(node=>reportForBrick(node))
+      ? '<div class="step"><div><strong>检查报告已显示在画布积木中</strong><div class="small">点击“查看完整报告”阅读五项证据。</div></div></div>'
+      : '<div class="step"><div><strong>最终输出</strong><div class="small">'+esc(firstLine || label)+'</div><details><summary>查看完整运行结果</summary><pre class="schema">'+esc(outputText)+'</pre></details></div></div>';
+  }
+  el.innerHTML = '<div class="step"><div class="marker">' + (data.passed ? '⏳' : '⚠') + '</div><div>' + (mode==='debug'?'单节点调试结果：':'流水线运行结果：') + (data.passed ? '通过' : '阻断') + '</div></div>' + lines + finalOutput + '<div class="step ' + (data.passed ? 'ok' : 'bad') + '"><div class="marker">' + (data.passed ? '✔' : '✘') + '</div><div>run_id=' + data.run_id + '</div></div>';
+  if(data.selected_node){
+    document.querySelector('#node-preview').textContent = JSON.stringify(data.selected_node.outputs || {}, null, 2);
+  }
+  renderPipelineSteps(data);
+  highlightRunNodes(data);
+}
+async function searchSkills({localOnly=false}={}){
+  const task = (document.querySelector('#task') || {}).value || '';
+  const scene = (document.querySelector('#scene') || {}).value || '';
+  const env = (document.querySelector('#env') || {}).value || '';
+  const query = [task, '场景 '+scene, '运行环境 '+env].join(' ');
+  const source = localOnly?'local':((document.querySelector('#source') || {}).value || 'auto');
+  const statusEl = document.querySelector('#search-status');
+  const safeQuery = query || '空搜索';
+  if(statusEl){ statusEl.textContent = '正在搜索：' + safeQuery; statusEl.dataset.state='neutral'; }
+  if(source==='dgx_semantic'){
+    try{
+      const response=await fetch(API_BASE+'/search/semantic',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task,scene})});
+      const data=await response.json();
+      if(!response.ok) throw new Error(typeof data.detail==='string'?data.detail:'DGX GPU 检索失败');
+      renderResults(data.results||[]); renderOnlineResults({results:[],warnings:[]});
+      statusEl.textContent='CUDA 语义检索 · '+data.device+' · '+data.model+' · '+data.elapsed_ms+' ms · '+(data.results||[]).length+' 项';
+      statusEl.dataset.state='success';
+    }catch(error){renderResults([]);renderOnlineResults({results:[],warnings:[]});statusEl.textContent='CUDA 检索未运行：'+error.message+'。可切换到本地匹配。';statusEl.dataset.state='error';}
+    return;
+  }
+  const wantLocal=!['online','nvidia_online'].includes(source), wantOnline=['auto','online','nvidia_online'].includes(source);
+  const localPayload={messages:[{role:'user',content:query}],source:source==='auto'?'local':source};
+  const onlinePayload={messages:[{role:'user',content:[task,scene].filter(Boolean).join(' ')}],source:source==='nvidia_online'?'nvidia_online':'online'};
+  const request=async(path,payload)=>{
+    const response=await fetch(API_BASE+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data=await response.json(); if(!response.ok) throw new Error(data.detail||'HTTP '+response.status); return data;
+  };
+  const [local,online]=await Promise.allSettled([
+    wantLocal?request('/search/skills',localPayload):Promise.resolve({results:[]}),
+    wantOnline?request('/search/online',onlinePayload):Promise.resolve({results:[],warnings:[]}),
+  ]);
+  const localItems=local.status==='fulfilled'?(local.value.results||[]):[];
+  const onlineData=online.status==='fulfilled'?online.value:{results:[],warnings:['在线搜索失败：'+online.reason.message]};
+  renderResults(localItems); renderOnlineResults(onlineData);
+  if(local.status==='rejected') appendLog('search',safeQuery,'失败','本地：'+local.reason.message);
+  appendLog('search',safeQuery,'完成','本地 '+localItems.length+' · 线上候选 '+(onlineData.results||[]).length);
+  statusEl.textContent=localOnly
+    ? (local.status==='fulfilled'?'自动检索本地 '+localItems.length+' 项 · GitHub 尚未查询（点“搜索匹配 Skill”）':'本地检索失败：'+local.reason.message)
+    : '本地 '+localItems.length+' 项 · GitHub 候选 '+(onlineData.results||[]).length+' 项'+(onlineData.warnings?.length?' · 部分线上来源不可用':'');
+  statusEl.dataset.state=local.status==='rejected'?'error':onlineData.warnings?.length?'warning':'success';
+}
+async function checkCompatibility(name){
+  const el = document.querySelector('#compat-notes');
+  try{
+    const names=Array.from(new Set(nodes.filter(n=>n.controlType==='skill').map(n=>n.name).concat(name)));
+    const response=await fetch(API_BASE + '/pipelines/compatibility', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({skill_names:names})});
+    const data=await response.json(); if(!response.ok) throw new Error(data.detail||response.status);
+    el.innerHTML='<div class="small">'+esc(data.scope)+'</div>'+(data.notes||[]).map(note=>'<div class="small" style="color:#b91c1c">'+esc(note)+'</div>').join('')+(data.compatible?'<div class="small" style="color:#15803d">声明的精确版本未发现冲突。</div>':'');
+  }catch(e){
+    el.innerHTML = '<div class="small" style="color:#b91c1c">兼容性检查失败：' + e.message + '</div>';
+  }
+}
+async function batchInspect(){
+  const items = Array.from(document.querySelectorAll('#results .card')).map(card => card.querySelector('.card-head strong')?.textContent?.trim()).filter(Boolean);
+  if(!items.length){ alert('请先搜索，再批量安检。'); return; }
+  let reports;
+  try{reports=await Promise.all(items.map(async name=>({name, report: await fetch(API_BASE+'/skills/'+encodeURIComponent(name)+'/health').then(r=>{if(!r.ok) throw new Error('HTTP '+r.status);return r.json()})})));}
+  catch(e){document.querySelector('#pulse-box').textContent='批量安检失败：'+e.message;return;}
+  document.querySelector('#pulse-box').innerHTML = reports.map(({name,report})=>renderHealthSummary(name,report)).join('');
+  reports.forEach(({name,report})=>appendLog('inspect',name,report.status==='HEALTHY'?'通过':'阻断','本地实际健康检查 · '+report.risk));
+}
+async function downloadAllPassed(){
+  const names=Array.from(document.querySelectorAll('#results .card')).filter(card=>!card.querySelector('.badge.fail,button[disabled]')).map(card=>card.querySelector('.card-head strong')?.textContent?.trim()).filter(Boolean);
+  if(!names.length){alert('没有通过安检的 Skill 可下载');return;}
+  for(const name of names) await downloadSkill(name, MARKET.find(item=>item.name===name)?.source!=='external_curated_action');
+}
+async function downloadSkill(name, saveFile=true){
+  const item=MARKET.find(s=>s.name===name);
+  if(!item || item.status!=='HEALTHY'){alert('Skill 安检未通过，后端禁止下载。');return;}
+  const response=await fetch(API_BASE+'/skills/'+encodeURIComponent(name)+'/download');
+  if(!response.ok){const err=await response.json().catch(()=>({detail:'下载被拒绝'}));alert(typeof err.detail==='string'?err.detail:(err.detail?.message||'下载被拒绝'));return;}
+  const blob=await response.blob();
+  if(saveFile){const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=name+'.zip'; a.click(); URL.revokeObjectURL(url);}
+  downloaded.add(name); appendLog('download',name,'通过',saveFile?'已从本地 API 下载 ZIP':'已从本地 API 载入通过安检的积木'); renderToolbar(); renderLocal(); loadAudit();
+}
+async function inspectSkill(name){
+  const box=document.querySelector('#pulse-box');
+  try{const response=await fetch(API_BASE+'/skills/'+encodeURIComponent(name)+'/health');const report=await response.json();if(!response.ok)throw new Error(report.detail||response.status);showHealthDialog(report.skill||name,report);appendLog('inspect',name,report.status==='HEALTHY'?'通过':'阻断','五项本地检查 · '+report.risk);}catch(e){box.textContent='检查失败：'+e.message;}
+}
+function debugNode(id){
+  const node = nodes.find(n=>n.id===id);
+  if(!node){ alert('请先选中节点'); return; }
+  node.inputs=collectSelectedInputs();
+  runPayload({nodes:[{id:node.id,name:node.name,control_type:node.controlType||'skill',inputs:node.inputs}],edges:[],inputs:{[node.id]:node.inputs},selected_node:node.id},'debug');
+}
+async function renderVersionControls(name){
+  if(CURRENT_VIEW!=='expert' || CURRENT_USER?.role!=='engineer') return;
+  const el = document.querySelector('#version-box');
+  if(!el || CONTROL_SCHEMAS[name]) return;
+  try{
+    const response=await fetch(API_BASE+'/skills/'+encodeURIComponent(name)+'/versions');
+    const data=await response.json(); if(!response.ok) throw new Error(data.detail||response.status);
+    if(!el.isConnected) return;
+    const verified=(data.history||[]).filter(record=>record.status==='snapshot_verified');
+    const damaged=(data.history||[]).filter(record=>record.status==='snapshot_missing_or_tampered');
+    const legacy=(data.history||[]).filter(record=>record.status==='unverified_record');
+    const latest=verified.at(-1);
+    el.innerHTML='<div>磁盘版本：'+esc(data.current?.version||'未验证')+' · 已验证源码快照 '+verified.length+' · 旧记录未验证 '+legacy.length+(damaged.length?' · <span style="color:#b91c1c">快照异常 '+damaged.length+'</span>':'')+'</div>'+
+      (data.current?'<button class="btn" id="snapshot-button" style="width:auto">创建当前源码快照</button>':'')+
+      (latest?'<a href="'+API_BASE+'/skills/'+encodeURIComponent(name)+'/snapshots/'+encodeURIComponent(latest.snapshot_sha256)+'">下载已验证快照</a>':'');
+    el.querySelector('#snapshot-button')?.addEventListener('click',()=>createVersionSnapshot(name));
+  }catch(e){if(el.isConnected) el.textContent='版本读取失败：'+e.message;}
+}
+async function createVersionSnapshot(name){
+  try{
+    const versions=await fetch(API_BASE+'/skills/'+encodeURIComponent(name)+'/versions').then(r=>r.json());
+    if(!versions.current) throw new Error('当前版本不可验证');
+    const response=await fetch(API_BASE+'/skills/'+encodeURIComponent(name)+'/versions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({version:versions.current.version})});
+    const data=await response.json(); if(!response.ok) throw new Error(data.detail||response.status);
+    appendLog('snapshot',name,'通过','源码快照 '+data.snapshot_sha256.slice(0,12));
+    await renderVersionControls(name); await loadAudit();
+  }catch(e){appendLog('snapshot',name,'阻断',e.message);alert('创建快照失败：'+e.message);}
+}
+function resetCanvas(){
+  nodes=[]; edges=[]; idCounter=1; selectedNodeId=null; currentRun=null; render(); document.querySelector('#log').innerHTML='暂无记录'; document.querySelector('#runner').innerHTML='底板已清空。'; document.querySelector('#node-preview').textContent='尚未选中节点。'; document.querySelector('#warnings').innerHTML='<div class="small" style="color:#15803d">拓扑校验通过，暂无阻断性问题。</div>';
+}
+function importTemplate(){
+  if(!confirm('导入真实本地安检与报告模板？')) return;
+  quickStartTemplate();
+}
+async function quickStartCuratedTemplate(){return quickStartTemplate(true);}
+async function quickStartTemplate(includeCurated=false){
+  const names=['skill-doctor','skill-report'];
+  if(includeCurated) names.push('nvidia-skill-card-validator');
+  const target=$('#diagnose-target')?.value;
+  const status=$('#guided-result');
+  if(!target){status.textContent='请先选择一个本地 Skill。';return;}
+  if(names.some(name=>!MARKET.some(item=>item.name===name&&item.status==='HEALTHY'))){status.textContent='所需积木未通过自身安检或隔离环境不可用，已阻止运行。';return;}
+  status.textContent='正在载入健康积木并执行实际检查…';
+  try{
+    for(const name of names){if(!downloaded.has(name)) await downloadSkill(name,false);if(!downloaded.has(name)) throw new Error(name+' 无法载入');}
+    resetCanvas(); const compact=$('#canvas').clientWidth<620;
+    addNode(names[0],compact?45:80,90); addNode(names[1],compact?45:360,compact?270:90);
+    if(includeCurated) addNode(names[2],compact?45:640,compact?450:90);
+    if(nodes.length!==names.length) throw new Error('模板装配未完成');
+    nodes[0].inputs.query=target; edges=[{from:nodes[0].id,to:nodes[1].id}];
+    if(includeCurated) edges.push({from:nodes[1].id,to:nodes[2].id});
+    render(); renderWarnings(validateTopology());
+    const data=await runPipeline();
+    if(!data?.passed) throw new Error('流水线运行未通过，请查看右侧运行结果');
+    const raw=data.nodes?.find(node=>node.name==='skill-doctor')?.outputs?.result;
+    const report=JSON.parse(raw);
+    const pass=(report.checks||[]).filter(item=>item.status==='PASS').length;
+    const validation=includeCurated?' · 外部固定动作 '+(data.selected_node?.outputs?.validation||'未返回结果'):'';
+    status.textContent=target+' · '+report.status+' · '+pass+'/5 项通过'+validation+'。完整报告在画布积木中。';
+  }catch(e){status.textContent='诊断未完成：'+e.message;}
+}
+async function createLocalUser(){
+  if(CURRENT_USER?.role!=='engineer') return;
+  const message=$('#user-message'); message.textContent='正在创建账号…';
+  try{const data=await authRequest('/auth/users',{username:$('#new-username').value.trim(),password:$('#new-password').value,role:$('#new-role').value});$('#new-password').value='';message.textContent='已创建 '+data.username+'（'+data.role+'）。';}
+  catch(e){message.textContent='创建失败：'+e.message;}
+}
+function renderUploadRecord(record){
+  const report=record.report||{};
+  const provenance=record.provenance;
+  const source=provenance?'<div class="small">来源：'+esc(provenance.repository)+' @ '+esc((provenance.commit_sha||'').slice(0,12))+' · 发布者和签名未验证</div><a href="'+esc(provenance.source_url)+'" target="_blank" rel="noopener noreferrer">查看固定版本来源 ↗</a>':'';
+  const failed=(report.checks||[]).filter(check=>check.status!=='PASS');
+  const block=record.block_reason?'<div class="small">阻断原因：'+esc(record.block_reason)+'</div>':'';
+  return '<div class="card"><div class="card-head"><strong>'+esc(report.skill||'未知 Skill')+'</strong><span class="badge fail">隔离 / HIGH</span></div>'+source+
+    '<div class="small">状态：'+esc(record.workflow_state||'REVIEW_REQUIRED')+' · 内容完整性：'+esc(record.content_integrity||'UNVERIFIED')+'</div>'+ 
+    block+
+    '<div class="small">待处理：'+esc(failed.map(check=>check.name).join('、')||'仍需人工审批')+'。不可加入画布或运行。</div>'+
+    '<details class="result-more"><summary>查看完整初审报告</summary><div class="small">上传 ID '+esc(record.id||'')+' · '+esc(record.created_at||'')+'</div>'+
+    '<div class="small">初审：'+esc(record.review?.decision||'PENDING')+(record.review?.reason?' — '+esc(record.review.reason):'')+'</div>'+
+    (record.revocation?'<div class="small">撤销：'+esc(record.revocation.revoked_at||'')+' · '+esc(record.revocation.reason||'')+'</div>':'')+
+    '<div class="small">'+(report.checks||[]).map(check=>'<div>'+esc(check.name)+': '+esc(check.status)+' — '+esc(check.detail)+'</div>').join('')+'</div>'+
+    '<div class="small">静态扫描不是恶意代码安全证明；上游签名未验证。</div></details></div>';
+}
+async function loadUploads(){
+  if(CURRENT_USER?.role!=='engineer' || CURRENT_VIEW!=='expert') return;
+  try{const response=await fetch(API_BASE+'/repository/uploads');const data=await response.json();if(!response.ok)throw new Error(data.detail||response.status);$('#repo-list').innerHTML=data.length?data.map(renderUploadRecord).join(''):'<div class="small">当前账号暂无上传包。</div>';}
+  catch(e){$('#repo-list').textContent='待审记录读取失败：'+e.message;}
+}
+async function uploadPrivateSkill(){
+  if(CURRENT_USER?.role!=='engineer') return;
+  const file=$('#repo-file').files[0], message=$('#repo-message');
+  if(!file){message.textContent='请先选择 ZIP 文件。';return;}
+  if(file.size>5*1024*1024){message.textContent='ZIP 超过 5 MiB 限制。';return;}
+  message.textContent='正在隔离上传并执行只读静态预检…';
+  try{const form=new FormData();form.append('package',file);const response=await fetch(API_BASE+'/repository/upload',{method:'POST',body:form});const data=await response.json();if(!response.ok)throw new Error(data.detail||response.status);message.textContent='已隔离待审：'+data.report.skill+'；不会执行上传代码。';$('#repo-file').value='';await loadUploads();await loadReviewQueue();}
+  catch(e){message.textContent='上传被拒绝：'+e.message;}
+}
+async function readApi(path){
+  const response=await fetch(API_BASE+path), data=await response.json();
+  if(!response.ok) throw new Error(typeof data.detail==='string'?data.detail:'HTTP '+response.status);
+  return data;
+}
+async function loadReviewQueue(){
+  if(CURRENT_USER?.role!=='engineer' || CURRENT_VIEW!=='expert') return;
+  const box=$('#review-queue');
+  try{
+    const records=await readApi('/repository/review-queue'); box.innerHTML='';
+    if(!records.length){box.textContent='暂无待审上传包。';return;}
+    records.forEach(record=>{
+      const line=document.createElement('div'); line.className='card';
+      line.textContent=(record.report?.skill||'未知 Skill')+' · 上传者 #'+record.owner_id+' · '+(record.workflow_state||'REVIEW_REQUIRED')+' · '+record.id.slice(0,8)+' ';
+      const button=document.createElement('button'); button.className='btn'; button.textContent='查看只读文件清单'; button.onclick=()=>selectReviewRecord(record.owner_id,record.id);
+      line.appendChild(button); box.appendChild(line);
+    });
+  }catch(e){box.textContent='队列读取失败：'+e.message;}
+}
+async function selectReviewRecord(owner,id){
+  SELECTED_REVIEW={owner,id}; $('#review-message').textContent='当前上传：'+id+'；上传者不能复核自己的包。';
+  const detail=$('#review-detail'); detail.textContent='读取只读文件清单…';
+  try{
+    const files=await readApi('/repository/review-queue/'+owner+'/'+encodeURIComponent(id)+'/files'); detail.innerHTML='';
+    files.forEach(file=>{
+      const line=document.createElement('div'); line.className='small'; line.textContent=file.path+' · '+file.bytes+' B · SHA-256 '+file.sha256.slice(0,12)+' ';
+      if(file.previewable){const button=document.createElement('button');button.className='btn';button.style.width='auto';button.textContent='纯文本预览';button.onclick=()=>previewReviewSource(owner,id,file.path);line.appendChild(button);}
+      detail.appendChild(line);
+    });
+  }catch(e){detail.textContent='文件清单不可用：'+e.message;}
+}
+async function previewReviewSource(owner,id,path){
+  const detail=$('#review-detail');
+  try{const data=await readApi('/repository/review-queue/'+owner+'/'+encodeURIComponent(id)+'/preview?path='+encodeURIComponent(path));const pre=document.createElement('pre');pre.style.whiteSpace='pre-wrap';pre.style.maxHeight='240px';pre.style.overflow='auto';pre.textContent='不可信上传内容，仅供人工检查：\n'+data.text;detail.appendChild(pre);}
+  catch(e){$('#review-message').textContent='预览失败：'+e.message;}
+}
+async function submitSelectedReview(){
+  if(!SELECTED_REVIEW){$('#review-message').textContent='请先选中待审上传包。';return;}
+  const {owner,id}=SELECTED_REVIEW;
+  try{const data=await authRequest('/repository/review-queue/'+owner+'/'+encodeURIComponent(id)+'/decision',{decision:$('#review-decision').value,reason:$('#review-reason').value});$('#review-message').textContent='已记录 '+data.decision+'；包仍为 QUARANTINED，不能运行。';$('#review-reason').value='';await loadReviewQueue();await loadUploads();}
+  catch(e){$('#review-message').textContent='初审失败：'+e.message;}
+}
+async function revokeSelectedUpload(){
+  if(!SELECTED_REVIEW){$('#review-message').textContent='请先选中待审版本。';return;}
+  const reason=$('#review-reason').value.trim();
+  if(reason.length<10){$('#review-message').textContent='请先填写至少 10 字的撤销理由。';return;}
+  if(!window.confirm('撤销此隔离版本后不可恢复。确定继续吗？')) return;
+  const {owner,id}=SELECTED_REVIEW;
+  try{
+    await authRequest('/repository/review-queue/'+owner+'/'+encodeURIComponent(id)+'/revoke',{reason});
+    $('#review-message').textContent='已撤销此固定版本；不可初审、下载或运行。';
+    $('#review-reason').value=''; await loadReviewQueue(); await loadUploads();
+  }catch(e){$('#review-message').textContent='撤销失败：'+e.message;}
+}
+async function loadMyWorkflows(){
+  const box=$('#my-workflows');
+  try{const records=await readApi('/me/workflows');box.innerHTML='<div class="title">已保存流程（'+records.length+'）</div>';records.slice(-10).reverse().forEach(record=>{const button=document.createElement('button');button.className='btn';button.textContent=record.name+' · '+record.snapshot.nodes.length+' 节点';button.onclick=()=>loadSavedWorkflow(record.id);box.appendChild(button);});}
+  catch(e){box.textContent='流程读取失败：'+e.message;}
+}
+async function saveCurrentWorkflow(){
+  if(!nodes.length){$('#workflow-message').textContent='画布为空，不能保存。';return;}
+  const payload={name:$('#workflow-name').value.trim(),nodes:nodes.map(n=>({id:n.id,name:n.name,control_type:n.controlType||'skill'})),edges:edges.map(e=>({from:e.from,to:e.to,route:e.route||null}))};
+  try{const data=await authRequest('/me/workflows',payload);$('#workflow-message').textContent='已保存 '+data.name+'；输入值和密钥未保存。';await loadMyWorkflows();}
+  catch(e){$('#workflow-message').textContent='保存失败：'+e.message;}
+}
+async function loadSavedWorkflow(id){
+  try{
+    const record=await readApi('/me/workflows/'+encodeURIComponent(id)), snapshot=record.snapshot;
+    for(const node of snapshot.nodes){
+      if(node.control_type==='skill'){
+        const item=MARKET.find(s=>s.name===node.name);
+        if(!item||item.status!=='HEALTHY'||item.version!==node.version) throw new Error(node.name+' 当前版本/准入状态已变，拒绝载入旧流程');
+        if(!downloaded.has(node.name)) await downloadSkill(node.name);
+        if(!downloaded.has(node.name)) return;
+      }
+    }
+    resetCanvas(); const idMap={};
+    const compact=$('#canvas').clientWidth<620;
+    snapshot.nodes.forEach((node,index)=>{const before=nodes.length;addNode(node.name,compact?45:60+index*245,compact?70+index*180:90);if(nodes.length!==before+1)throw new Error(node.name+' 无法加入画布');idMap[node.id]=nodes.at(-1).id;});
+    if(Object.keys(idMap).length!==snapshot.nodes.length||Object.values(idMap).some(id=>!id)) throw new Error('节点装配失败');
+    edges=snapshot.edges.map(edge=>({from:idMap[edge.from],to:idMap[edge.to],route:edge.route})); render(); renderWarnings(validateTopology());
+    $('#workflow-message').textContent='已载入 '+record.name+'；请重新填写必填输入，再运行。';
+  }catch(e){$('#workflow-message').textContent='载入失败：'+e.message;}
+}
+async function loadMyRuns(){
+  const box=$('#my-runs');
+  try{const records=await readApi('/me/runs');box.innerHTML='<div class="title">我的运行摘要（'+records.length+'）</div>';records.slice(-10).reverse().forEach(record=>{const button=document.createElement('button');button.className='btn';button.textContent=record.run_id+' · '+(record.passed?'通过':'失败')+' · '+record.nodes+' 节点';button.onclick=()=>showMyRun(record.run_id);box.appendChild(button);});}
+  catch(e){box.textContent='运行摘要读取失败：'+e.message;}
+}
+async function showMyRun(id){
+  try{const data=await readApi('/me/runs/'+encodeURIComponent(id));$('#run-detail').textContent='运行 '+data.run_id+'：'+(data.response_summary.passed?'通过':'失败')+'；节点 '+data.response_summary.nodes.map(n=>n.name+' '+n.status).join(' → ')+'。仅存脱敏摘要。';}
+  catch(e){$('#run-detail').textContent='摘要读取失败：'+e.message;}
+}
+async function loadAudit(){
+  if(CURRENT_VIEW!=='expert' || CURRENT_USER?.role!=='engineer') return;
+  try{
+    const response=await fetch(API_BASE + '/audit/logs');
+    const data=await response.json(); if(!response.ok) throw new Error(data.detail||response.status);
+    document.querySelector('#audit-status').textContent='哈希链 '+data.integrity.chained_count+' 条 · 旧记录 '+data.integrity.legacy_count+' 条未验证（无外部锚）';
+    document.querySelector('#log').innerHTML = (data.logs || []).slice(-80).map(entry => '<div><span class="small">' + esc(new Date(entry.time).toLocaleString('zh-CN')) + '</span> <span class="' + (entry.result==='通过'?'ok':entry.result==='阻断'?'bad':'warn') + '">[' + esc(entry.action) + ']</span> ' + esc(entry.target) + ' — ' + esc(entry.detail || entry.result) + '</div>').join('');
+  }catch(e){
+    document.querySelector('#audit-status').textContent='审计读取/校验失败';
+    document.querySelector('#log').textContent='审计记录不可用：'+e.message;
+  }
+}
+function exportAudit(){
+  window.open(API_BASE + '/audit/export', '_blank');
+}
+async function verifyAudit(){
+  try{
+    const response=await fetch(API_BASE+'/audit/verify');
+    const data=await response.json(); if(!response.ok) throw new Error(data.detail||response.status);
+    document.querySelector('#audit-status').textContent=data.valid?'本地哈希链完整：'+data.count+' 条（无外部锚）':'审计链校验失败：'+data.error;
+    appendLog('audit','local-chain',data.valid?'通过':'阻断',data.valid?'链内部校验通过；旧记录未验证':'链内容有变更');
+  }catch(e){document.querySelector('#audit-status').textContent='校验失败：'+e.message;}
+}
+function exportAuditReport(){
+  if(!currentRun?.run_id){alert('请先运行一次流水线，再导出本次审计报告。');return;}
+  window.open(API_BASE+'/audit/report/'+encodeURIComponent(currentRun.run_id),'_blank');
+}
+async function runPayload(payload, action='run'){
+  const runner=document.querySelector('#runner'); runner.innerHTML='<div class="step"><div class="marker">⏳</div><div>正在通过受限本地子进程执行…</div></div>';
+  try{
+    const response=await fetch(API_BASE+'/pipelines/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data=await response.json(); if(!response.ok) throw new Error(typeof data.detail==='string'?data.detail:(data.detail?.message||JSON.stringify(data.detail)));
+    currentRun=data; if(CURRENT_USER?.role==='engineer' && CURRENT_VIEW==='expert') await loadAudit(); await loadMyRuns(); renderRunResult(data,action);
+    appendLog(action,action==='debug'?'selected node':'pipeline',data.passed?'通过':'阻断','run_id='+data.run_id);
+    if(!data.passed) runner.innerHTML='<div class="step bad"><div class="marker">✘</div><div>至少一个节点运行失败；流水线未报告为成功。</div></div>'+runner.innerHTML;
+    return data;
+  }catch(e){runner.innerHTML='<div class="step bad"><div class="marker">✘</div><div>执行失败：'+esc(e.message)+'</div></div>';appendLog(action,'pipeline','阻断',e.message);return null;}
+}
+async function runPipeline(){
+  if(!nodes.length){alert('画布为空，请先下载并加入 Skill。');return;}
+  if(selectedNodeId){const selected=nodes.find(n=>n.id===selectedNodeId);if(selected) selected.inputs=collectSelectedInputs();}
+  const warnings = validateTopology();
+  renderWarnings(warnings);
+  const blocked = warnings.length > 0;
+  if(blocked){ alert('请先修复画布拓扑问题'); return; }
+  const payload = {
+    nodes: nodes.map(n=>({id:n.id, name:n.name, x:n.x, y:n.y, control_type:n.controlType||'skill', input_type:n.inputType || 'any', output_type:n.outputType || 'any', node_schema:n.node_schema, inputs:n.inputs||{}})),
+    edges: edges.map(e=>({from:e.from, to:e.to, route:e.route||null})),
+    inputs: Object.fromEntries(nodes.map(n=>[n.id,n.inputs||{}])),
+    selected_node: selectedNodeId || null
+  };
+  return await runPayload(payload);
+}
+async function exportPipeline(format='yaml'){
+  if(!nodes.length){ alert('画布为空'); return; }
+  const payload = {nodes: nodes.map(n=>({id:n.id,name:n.name,control_type:n.controlType||'skill'})), edges: edges.map(e=>({from:e.from,to:e.to,route:e.route||null})), format};
+  try{
+    const response=await fetch(API_BASE + '/pipelines/export', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+    const data=await response.json(); if(!response.ok) throw new Error(data.detail||response.status);
+    const blob = new Blob([format==='openapi'?JSON.stringify(data.openapi,null,2):data.yaml], {type:format==='openapi'?'application/json':'text/yaml'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'skillpulse-pipeline.'+(format==='openapi'?'openapi.json':'yaml'); a.click(); URL.revokeObjectURL(url);
+    appendLog('export', 'pipeline', '已导出', format);
+    loadAudit();
+  }catch(e){alert('导出失败：'+e.message);}
+}
+function portCenter(id, kind){
+  const el = document.querySelector('.port[data-node="'+id+'"][data-port="'+kind+'"]') || document.querySelector('.brick[data-id="'+id+'"]');
+  if(!el) return {x:0,y:0};
+  const rect = el.getBoundingClientRect();
+  const canvasRect = document.querySelector('#canvas').getBoundingClientRect();
+  const x = kind === 'in' ? (rect.left - canvasRect.left) : (rect.right - canvasRect.left);
+  const y = rect.top - canvasRect.top + 9;
+  return {x,y};
+}
+function initPortDrag(){
+  const canvas = document.querySelector('#canvas');
+  const svg = document.querySelector('#edges');
+  let tempPath = null;
+  canvas.addEventListener('mousedown', e=>{
+    const port = e.target.closest('.port');
+    if(!port) return;
+    const nodeId = port.dataset.node;
+    const kind = port.dataset.port;
+    if(kind === 'out'){
+      connectingFrom = nodeId;
+      tempPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      tempPath.setAttribute('class', 'edge inactive');
+      tempPath.setAttribute('d', 'M 0 0 L 0 0');
+      svg.appendChild(tempPath);
+    }
+  });
+  window.addEventListener('mousemove', e=>{
+    if(!connectingFrom || !tempPath) return;
+    const start = portCenter(connectingFrom, 'out');
+    const canvasRect = document.querySelector('#canvas').getBoundingClientRect();
+    const end = {x: e.clientX - canvasRect.left, y: e.clientY - canvasRect.top};
+    tempPath.setAttribute('d', 'M ' + start.x + ' ' + start.y + ' C ' + (start.x+end.x)/2 + ' ' + start.y + ', ' + (start.x+end.x)/2 + ' ' + end.y + ', ' + end.x + ' ' + end.y);
+  });
+  window.addEventListener('mouseup', e=>{
+    const targetPort=e.target.closest?.('.port.in');
+    const source=connectingFrom, target=targetPort?.dataset.node;
+    connectingFrom=null;
+    if(tempPath){tempPath.remove();tempPath=null;}
+    if(!source || !target) return;
+    if(source===target || hasCycle(source,target)){alert('禁止形成循环或自连');return;}
+    if(edges.some(edge=>edge.from===source && edge.to===target)){alert('该连线已存在');return;}
+    const sourceNode=nodes.find(n=>n.id===source);
+    let route=null;
+    if(sourceNode?.controlType==='if_branch'){
+      route=prompt('这条分支出线走哪条路径？输入 true 或 false','true');
+      if(!['true','false'].includes(route)){alert('只允许 true 或 false');return;}
+      if(edges.some(edge=>edge.from===source && edge.route===route)){alert('该分支路由已有出线');return;}
+    }
+    edges.push({from:source,to:target,route,active:false});
+    currentRun=null;
+    recordOperation('connect',source+'-'+target,source);
+    drawEdges(); renderWarnings(validateTopology());
+  });
+}
+function hasCycle(from, to){
+  const visited = new Set();
+  const stack = [to];
+  while(stack.length){
+    const cur = stack.pop();
+    if(cur === from) return true;
+    if(visited.has(cur)) continue;
+    visited.add(cur);
+    edges.filter(e=>e.from===cur).forEach(e=>stack.push(e.to));
+  }
+  return false;
+}
+document.querySelector('#pulse-box').addEventListener('click', event=>{
+  const button=event.target.closest('[data-health-name]');
+  if(button) inspectSkill(button.dataset.healthName);
+});
+document.querySelector('#health-dialog').addEventListener('click', event=>{
+  if(event.target.id==='health-dialog') closeHealthDialog();
+});
+(async function init(){ initPortDrag(); await authStatus(); })();
+</script>

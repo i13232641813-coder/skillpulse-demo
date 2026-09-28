@@ -1,0 +1,17 @@
+# Runtime dependencies, pinned for repeatable installs.
+fastapi==0.115.0
+uvicorn==0.32.0
+pydantic==2.9.2
+python-multipart==0.0.12
+
+# Pinned transitive dependencies used by the runtime above.
+annotated-types==0.8.0
+anyio==4.15.1
+click==8.1.7
+colorama==0.4.6
+h11==0.14.0
+idna==3.20
+pydantic-core==2.23.4
+sniffio==1.3.1
+starlette==0.38.6
+typing-extensions==4.16.0
